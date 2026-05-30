@@ -19,6 +19,9 @@ import {
   Smile,
   Volume2,
   Zap,
+  User,
+  LogOut,
+  Home,
 } from "lucide-react";
 import yeti from "@/assets/yeti.png";
 import {
@@ -540,9 +543,104 @@ function LandingPage({ onStart }: { onStart: () => void }) {
   );
 }
 
+function OnboardingNav({
+  email,
+  view,
+  onSetup,
+  onAccount,
+}: {
+  email?: string;
+  view: "setup" | "account";
+  onSetup: () => void;
+  onAccount: () => void;
+}) {
+  return (
+    <header className="fixed left-1/2 top-4 z-50 w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2">
+      <nav className="flex items-center justify-between gap-2 rounded-full border border-white/70 bg-white/82 px-2 py-2 shadow-[0_18px_58px_-34px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={onSetup}
+          className="flex min-w-0 items-center gap-2 rounded-full px-3 py-2 text-left transition hover:bg-muted"
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10">
+            <img src={yeti} alt="" className="h-6 w-6 object-contain" />
+          </span>
+          <span className="hidden text-sm font-black tracking-tight text-foreground sm:block">
+            Yeti Guide
+          </span>
+        </button>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onSetup}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
+              view === "setup"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Home className="h-3.5 w-3.5" />
+            Setup
+          </button>
+          <button
+            type="button"
+            onClick={onAccount}
+            className={`inline-flex max-w-[190px] items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold transition ${
+              view === "account"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <User className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{email || "Account"}</span>
+          </button>
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+function AccountPage({
+  email,
+  onLogout,
+}: {
+  email?: string;
+  onLogout: () => void;
+}) {
+  return (
+    <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
+      <section className="w-full max-w-md rounded-[2rem] border border-border/60 bg-white p-7 text-center shadow-[0_24px_80px_-46px_rgba(15,23,42,0.48)]">
+        <Mascot size={76} />
+        <p className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-primary">
+          Account
+        </p>
+        <h1 className="mt-3 text-3xl font-black tracking-[-0.05em] text-foreground">
+          Your Yeti workspace
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Signed in as
+        </p>
+        <p className="mt-2 rounded-2xl bg-muted px-4 py-3 text-sm font-bold text-foreground">
+          {email || "Unknown email"}
+        </p>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:bg-foreground/90"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </button>
+      </section>
+    </main>
+  );
+}
+
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [showLogin, setShowLogin] = useState(false);
+  const [view, setView] = useState<"setup" | "account">("setup");
   const [name, setName] = useState("");
   const [site, setSite] = useState("");
   const [loading, setLoading] = useState(false);
@@ -767,6 +865,38 @@ export default function Onboarding() {
     setTimeout(() => setCopied(false), 1800);
   };
 
+  const email = session?.user?.email;
+
+  const openSetup = () => {
+    setView("setup");
+    setError("");
+  };
+
+  const openAccount = () => {
+    stopListening();
+    setView("account");
+    setError("");
+  };
+
+  const logout = async () => {
+    stopListening();
+    setAuthLoading(true);
+    await supabase.auth.signOut();
+    setSession(null);
+    setView("setup");
+    setShowLogin(true);
+    setAuthLoading(false);
+  };
+
+  const nav = (
+    <OnboardingNav
+      email={email}
+      view={view}
+      onSetup={openSetup}
+      onAccount={openAccount}
+    />
+  );
+
   if (checkingAuth) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-background">
@@ -789,12 +919,23 @@ export default function Onboarding() {
     );
   }
 
+  if (view === "account") {
+    return (
+      <>
+        {nav}
+        <AccountPage email={email} onLogout={logout} />
+      </>
+    );
+  }
+
   // Step 2 — horizontal layout
   if (step === 2) {
     const displaySnippet = `<!-- Yeti Guide Widget -->\n<script\n  src="${WIDGET_HOST}/widget.js"\n  data-yeti="${yetiId}"\n  async\n></script>`;
 
     return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 py-10">
+      <>
+      {nav}
+      <main className="min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
         <div className="w-full max-w-[1040px] mx-auto">
           <StepShell step={2}>
             <Stepper step={step} />
@@ -899,13 +1040,16 @@ export default function Onboarding() {
           </StepShell>
         </div>
       </main>
+      </>
     );
   }
 
   // Step 1 gets its own full-page layout
   if (step === 1) {
     return (
-      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 py-4 sm:py-6">
+      <>
+      {nav}
+      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-28">
         <div className="w-full max-w-[640px] mx-auto">
           <StepShell step={1}>
             <Stepper step={step} />
@@ -1018,11 +1162,14 @@ export default function Onboarding() {
           </StepShell>
         </div>
       </main>
+      </>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+    <>
+    {nav}
+    <main className="min-h-screen bg-background flex items-center justify-center px-4 pb-10 pt-28">
       <div className="w-full max-w-[560px]">
         <div className="bg-card rounded-3xl shadow-[0_20px_60px_-20px_rgba(80,40,160,0.25)] p-8 sm:p-12 border border-border/40">
           <Stepper step={step} />
@@ -1087,5 +1234,6 @@ export default function Onboarding() {
         </div>
       </div>
     </main>
+    </>
   );
 }
