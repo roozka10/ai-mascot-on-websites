@@ -638,13 +638,13 @@ export default function Onboarding() {
                   Add Yeti to any website
                 </h1>
                 <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                  Yeti will load the personality you just recorded, answer visitors with that business knowledge, speak out loud, and guide people around the site.
+                  Yeti will load the personality you just recorded, answer visitors with that business knowledge, and speak out loud on your site.
                 </p>
 
                 <div className="mt-7 grid gap-3">
                   {[
                     "Copy the code on the right.",
-                    "Paste it before the closing </body> tag.",
+                    "Tell Cursor, Claude Code, Codex, or any coding agent: \"Add this widget script to my website footer, right before </body>.\"",
                     "Publish the website. Yeti goes live.",
                   ].map((text, index) => (
                     <div key={text} className="flex items-center gap-3 rounded-2xl bg-muted/45 px-4 py-3 text-sm text-foreground">
@@ -720,7 +720,7 @@ export default function Onboarding() {
                 <div className="mt-5 rounded-2xl border border-border/60 bg-white px-5 py-4">
                   <p className="text-sm font-semibold text-foreground">Short install note</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Put this code in your website footer, theme custom code, or before <code className="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;/body&gt;</code>. The <code className="rounded bg-muted px-1.5 py-0.5 text-xs">data-yeti</code> ID connects this site to the personality you recorded.
+                    You can paste this yourself, or tell your AI coding agent: <span className="font-medium text-foreground">"Add this Yeti widget script to my website footer before <code className="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;/body&gt;</code>."</span> The <code className="rounded bg-muted px-1.5 py-0.5 text-xs">data-yeti</code> ID connects this site to the personality you recorded.
                   </p>
                 </div>
               </section>
