@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yeti Guide Widget</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      color: #1d1d1f;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ——————————————————————————————————
+       YETI WIDGET — everything below here
+    —————————————————————————————————— */
+
+    /* Container — fixed bottom right */
+    #yeti-widget {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      pointer-events: none; /* let clicks pass through empty space */
+    }
+    #yeti-widget > * {
+      pointer-events: auto; /* re-enable on actual children */
+    }
+    .yeti-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 200px;
+    }
+
+    /* ——— Speech bubble ——— */
+    .yeti-bubble {
+      background: #ffffff;
+      border: 2.5px solid #1d1d1f;
+      border-radius: 18px;
+      padding: 12px 18px;
+      max-width: 240px;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1d1d1f;
+      text-align: center;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      opacity: 0;
+      transform: translateY(8px) scale(0.95);
+      animation: bubbleIn 0.5s 0.6s forwards;
+    }
+    /* Bubble tail */
+    .yeti-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid #ffffff;
+      filter: drop-shadow(0 2px 1px rgba(0,0,0,0.06));
+    }
+    .yeti-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 11px solid transparent;
+      border-right: 11px solid transparent;
+      border-top: 11px solid #1d1d1f;
+    }
+
+    /* ——— Character image area ——— */
+    .yeti-character {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      cursor: pointer;
+      animation: yetiEntrance 0.6s 0.2s both;
+    }
+    .yeti-character img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    /* Default mascot */
+    .yeti-character .yeti-img-idle { display: block; }
+    .yeti-character .yeti-img-thinking { display: none; }
+
+    /* ——— Wait label under character during thinking ——— */
+    .yeti-wait-label {
+      display: none;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #7b6fe6;
+      text-align: center;
+      margin-top: -4px;
+      animation: waitPulse 1.2s infinite;
+    }
+
+    /* ——— Mic button ——— */
+    .yeti-mic-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2.5px solid #1d1d1f;
+      background: #7b6fe6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: transform 0.15s, background 0.2s;
+      box-shadow: 0 3px 10px rgba(123,111,230,0.3);
+    }
+    .yeti-mic-btn:hover {
+      transform: scale(1.1);
+      background: #6858d4;
+    }
+    .yeti-mic-btn:active {
+      transform: scale(0.95);
+    }
+    .yeti-mic-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #ffffff;
+    }
+    /* Disabled / loading state */
+    .yeti-mic-btn.disabled {
+      background: #c5c5c7;
+      cursor: not-allowed;
+      box-shadow: none;
+      position: relative;
+    }
+    .yeti-mic-btn.disabled:hover { transform: none; }
+    .yeti-mic-btn.disabled svg { opacity: 0.3; }
+    .yeti-mic-btn .mic-spinner {
+      display: none;
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spinLoader 0.7s linear infinite;
+    }
+    .yeti-mic-btn.disabled .mic-spinner { display: block; }
+    @keyframes spinLoader {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ——————————————————————————————
+       ANIMATION STATES
+    —————————————————————————————— */
+
+    /* IDLE — gentle float */
+    .yeti-state-idle .yeti-character {
+      animation: yetiFloat 3s ease-in-out infinite;
+    }
+
+    /* Listening bubble — clean transcription style */
+    .yeti-state-listening .yeti-bubble {
+      text-align: left;
+      font-weight: 500;
+      color: #333;
+      min-height: 40px;
+    }
+    .yeti-bubble .blink-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: #7b6fe6;
+      margin-left: 3px;
+      vertical-align: text-bottom;
+      animation: cursorBlink 0.8s step-end infinite;
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0; }
+    }
+
+    /* LISTENING — same float as idle, no extra movement */
+    .yeti-state-listening .yeti-character {
+      animation: yetiFloat 3s ease-in-out infinite;
+    }
+    .yeti-state-listening .yeti-mic-btn {
+      background: #e74c3c;
+      box-shadow: 0 0 0 0 rgba(231,76,60,0.5);
+      animation: micPulse 1.4s infinite;
+    }
+
+    /* THINKING — swap to hands-up image, wobble, show "wait" */
+    .yeti-state-thinking .yeti-character {
+      width: 190px;
+      height: 165px;
+      animation: yetiWobble 1.5s ease-in-out infinite;
+    }
+    .yeti-state-thinking .yeti-character .yeti-img-idle { display: none; }
+    .yeti-state-thinking .yeti-character .yeti-img-thinking { display: block; }
+    .yeti-state-thinking .yeti-wait-label {
+      display: block;
+    }
+
+    /* TALKING — happy bounce */
+    .yeti-state-talking .yeti-character {
+      animation: yetiBounce 0.45s ease-in-out infinite;
+    }
+
+    /* ——————————————————————————————
+       KEYFRAMES
+    —————————————————————————————— */
+    @keyframes yetiEntrance {
+      0%   { opacity: 0; transform: translateY(40px) scale(0.7); }
+      60%  { opacity: 1; transform: translateY(-6px) scale(1.03); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes bubbleIn {
+      0%   { opacity: 0; transform: translateY(8px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes yetiFloat {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes yetiListen {
+      0%   { transform: scale(1) rotate(0deg); }
+      100% { transform: scale(1.08) rotate(-2deg); }
+    }
+    @keyframes micPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
+      70%  { box-shadow: 0 0 0 12px rgba(231,76,60,0); }
+      100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
+    }
+    @keyframes yetiWobble {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+    @keyframes yetiBounce {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50%      { transform: translateY(-10px) scaleY(1.04); }
+    }
+    @keyframes waitPulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ====== YETI WIDGET ====== -->
+  <div id="yeti-widget" class="yeti-state-idle">
+    <!-- Inner column — keeps bubble, character, mic lined up center -->
+    <div class="yeti-inner">
+      <!-- Speech bubble -->
+      <div class="yeti-bubble">
+        Yo, need help finding something? I got you! 🤙
+      </div>
+
+      <!-- Character -->
+      <div class="yeti-character">
+        <img class="yeti-img-idle" src="mainmascot.png" alt="Yeti Guide" />
+        <img class="yeti-img-thinking" src="mascotwithhandsup.png" alt="Yeti Thinking" />
+      </div>
+
+      <!-- Wait label (shown only during thinking state) -->
+      <div class="yeti-wait-label">wait...</div>
+
+      <!-- Mic button -->
+      <button class="yeti-mic-btn" aria-label="Talk to Yeti">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+
+    // ——— DOM refs ———
+    const widget = document.getElementById('yeti-widget');
+    const bubble = widget.querySelector('.yeti-bubble');
+    const micBtn = widget.querySelector('.yeti-mic-btn');
+    const states = ['idle', 'listening', 'thinking', 'talking'];
+
+    // ——— App state ———
+    let isSpeaking = false;
+    let isListening = false;
+    let recognition = null;
+    let bestVoice = null;
+
+    // ——— Private API config. Secrets stay in server environment variables. ———
+    const API_BASE_URL = window.location.origin;
+
+    const DEFAULT_PROMPT = `You are a helpful yeti named Yeti who assists visitors on websites.
+You are friendly, professional, and concise.
+Keep every reply to ONE short sentence, maximum two. Never give long answers.
+If someone asks where something is on the website, guide them with clear directions.
+Never be robotic or overly formal. Never use bullet points or lists.
+You are helping visitors on a website. The website has the following pages and features:
+Home, Pricing, Features, Contact. They sell amazing products.
+Always guide the user to exactly where they need to go with helpful directions.`;
+
+    let SYSTEM_PROMPT = DEFAULT_PROMPT;
+    let chatHistory = [];
+
+    // ——— Load custom personality from Supabase if ?id= is in URL ———
+    async function loadYetiConfig() {
+      const yetiId = params.get('id');
+      if (!yetiId) return;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/yeti-config?id=${encodeURIComponent(yetiId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.prompt) {
+          SYSTEM_PROMPT = data.prompt;
+          console.log(`[Yeti] Loaded custom personality for "${data.business_name}"`);
+        }
+      } catch (err) {
+        console.warn('[Yeti] Failed to load config, using default:', err);
+      }
+    }
+
+    // Load config immediately (non-blocking — chat works with default until loaded)
+    loadYetiConfig();
+
+    // ——— Pick the best human-sounding voice ———
+    const voicePrefs = [
+      'Google US English',
+      'Google UK English Female',
+      'Samantha',
+      'Karen',
+      'Moira',
+      'Tessa',
+      'Microsoft Zira',
+      'Microsoft Jenny',
+      'Alex'
+    ];
+
+    function pickVoice() {
+      const voices = speechSynthesis.getVoices();
+      for (const pref of voicePrefs) {
+        const match = voices.find(v => v.name.includes(pref));
+        if (match) { bestVoice = match; break; }
+      }
+      if (!bestVoice && voices.length > 0) {
+        bestVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      }
+      if (bestVoice) console.log('[Yeti] Voice:', bestVoice.name);
+    }
+
+    speechSynthesis.onvoiceschanged = pickVoice;
+    pickVoice();
+
+    // ——— State management ———
+    function setYetiState(state) {
+      states.forEach(s => widget.classList.remove('yeti-state-' + s));
+      widget.classList.add('yeti-state-' + state);
+    }
+
+    function setBubbleText(text) {
+      bubble.textContent = text;
+    }
+
+    // ——— Parse guide commands from AI response ———
+    function parseCommands(text) {
+      const scrollMatch = text.match(/\[scroll:(#[\w-]+|\.[\w-]+)\]/);
+      const navigateMatch = text.match(/\[navigate:(\/[^\]]+)\]/);
+
+      let cleanText = text;
+      let command = null;
+
+      if (scrollMatch) {
+        command = { type: 'scroll', target: scrollMatch[1] };
+        cleanText = text.replace(scrollMatch[0], '').trim();
+      } else if (navigateMatch) {
+        command = { type: 'navigate', target: navigateMatch[1] };
+        cleanText = text.replace(navigateMatch[0], '').trim();
+      }
+
+      return { cleanText, command };
+    }
+
+    // ——— Speak text using Web Speech Synthesis ———
+    function yetiSpeak(text) {
+      if (isSpeaking) return;
+      // Cancel anything queued
+      speechSynthesis.cancel();
+      isSpeaking = true;
+
+      // Parse commands
+      const { cleanText, command } = parseCommands(text);
+
+      // Send command to parent page
+      if (command && window.parent !== window) {
+        window.parent.postMessage({ type: 'yeti-guide', action: command }, '*');
+        console.log('[Yeti] Guide command:', command);
+      }
+
+      setBubbleText(cleanText);
+      setYetiState('talking');
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      if (bestVoice) utterance.voice = bestVoice;
+      utterance.rate = 1.05;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        isSpeaking = false;
+        setYetiState('idle');
+        setBubbleText('Need help finding something? I can guide you.');
+      };
+
+      utterance.onerror = (e) => {
+        console.error('[Yeti] Speech error:', e);
+        isSpeaking = false;
+        setYetiState('idle');
+      };
+
+      speechSynthesis.speak(utterance);
+      console.log('[Yeti] Speaking:', cleanText);
+    }
+    window.yetiSpeak = yetiSpeak;
+
+    // ——— Ask the private Yeti API. Secrets stay on the server. ———
+    async function askYetiApi(messages) {
+      const response = await fetch(`${API_BASE_URL}/api/yeti-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages })
+      });
+      if (!response.ok) throw new Error(`${response.status}`);
+      const data = await response.json();
+      return data.reply?.trim();
+    }
+
+    async function askYetiBrain(userText) {
+      chatHistory.push({ role: 'user', content: userText });
+      if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
+
+      const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...chatHistory];
+
+      try {
+        console.log('[Yeti] Asking private API...');
+        const reply = await askYetiApi(messages);
+        if (reply) {
+          console.log('[Yeti] Brain says:', reply);
+          chatHistory.push({ role: 'assistant', content: reply });
+          yetiSpeak(reply);
+          return;
+        }
+      } catch (e) {
+        console.log('[Yeti] Private API failed:', e.message);
+      }
+
+      yetiSpeak("Oops, my brain froze! Try again in a sec!");
+    }
+
+    // ——— Chrome Web Speech Recognition ———
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let lastTranscript = '';
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        console.log('[Yeti] Mic is active');
+      };
+
+      recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        lastTranscript = final || interim;
+        bubble.innerHTML = (final + interim) + '<span class="blink-cursor"></span>';
+      };
+
+      recognition.onend = () => {
+        console.log('[Yeti] Mic ended, got:', lastTranscript);
+
+        // If user hasn't stopped manually and no text yet, keep listening
+        if (isListening && !lastTranscript.trim()) {
+          console.log('[Yeti] No speech detected, restarting mic...');
+          try { recognition.start(); } catch(e) {}
+          return;
+        }
+
+        isListening = false;
+
+        if (lastTranscript.trim()) {
+          const finalText = lastTranscript.trim();
+          console.log('[Yeti] User said:', finalText);
+          setYetiState('thinking');
+          setBubbleText('Hmm let me think... 🤔');
+
+          // Send to Gemma brain
+          askYetiBrain(finalText);
+        } else {
+          setYetiState('idle');
+          setBubbleText('Yo, need help finding something? I got you! 🤙');
+        }
+        lastTranscript = '';
+      };
+
+      recognition.onerror = (event) => {
+        console.error('[Yeti] Speech error:', event.error);
+        if (event.error === 'no-speech') return;
+        isListening = false;
+        setYetiState('idle');
+        setBubbleText('Yo, need help finding something? I got you! 🤙');
+      };
+    } else {
+      console.warn('[Yeti] Web Speech API not supported');
+    }
+
+    function startListening() {
+      if (!recognition || isListening || isSpeaking) return;
+      isListening = true;
+      lastTranscript = '';
+      setYetiState('listening');
+      bubble.innerHTML = '<span class="blink-cursor"></span>';
+      try {
+        recognition.start();
+      } catch (e) {
+        console.error('[Yeti] Could not start mic:', e);
+        isListening = false;
+        setYetiState('idle');
+      }
+      console.log('[Yeti] Listening...');
+    }
+
+    function stopListening() {
+      if (!recognition || !isListening) return;
+      recognition.stop();
+    }
+
+    // ——— Click yeti character to speak greeting ———
+    const yetiChar = widget.querySelector('.yeti-character');
+    yetiChar.addEventListener('click', () => {
+      if (isSpeaking) return;
+      yetiSpeak("Yo, need help finding something? I got you!");
+    });
+
+    // ——— Mic button — tap to start/stop listening ———
+    micBtn.addEventListener('click', () => {
+      if (isSpeaking) return;
+      if (isListening) {
+        stopListening();
+      } else {
+        startListening();
+      }
+    });
+  </script>
+</body>
+</html>

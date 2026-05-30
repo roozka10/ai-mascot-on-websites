@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix yetionboarding install && npm --prefix yetionboarding run build",
+    "build:local": "npm --prefix yetionboarding run build",
+    "dev": "npm --prefix yetionboarding run dev",
+    "lint": "npm --prefix yetionboarding run lint",
+    "preview": "npm --prefix yetionboarding run preview"
+  }
+}
