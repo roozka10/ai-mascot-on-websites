@@ -234,6 +234,9 @@
       opacity: 1 !important;
       transform: translateY(0) scale(1);
     }
+    #yeti-widget.yeti-state-talking {
+      right: 110px;
+    }
     .yeti-state-talking .yeti-character {
       animation: yetiBounce 0.45s ease-in-out infinite;
     }
@@ -492,11 +495,15 @@
     window.yetiSpeak = yetiSpeak;
 
     // ——— Ask the private Yeti API. Secrets stay on the server. ———
-    async function askYetiApi(messages) {
+    async function askYetiApi(messages, question) {
       const response = await fetch(`${API_BASE_URL}/api/yeti-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages })
+        body: JSON.stringify({
+          messages,
+          yeti_id: params.get('id'),
+          question
+        })
       });
       if (!response.ok) throw new Error(`${response.status}`);
       const data = await response.json();
@@ -511,7 +518,7 @@
 
       try {
         console.log('[Yeti] Asking private API...');
-        const reply = await askYetiApi(messages);
+        const reply = await askYetiApi(messages, userText);
         if (reply) {
           console.log('[Yeti] Brain says:', reply);
           chatHistory.push({ role: 'assistant', content: reply });

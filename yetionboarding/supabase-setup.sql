@@ -19,6 +19,8 @@ create table if not exists public.yeti_configs (
   created_at timestamptz not null default now()
 );
 
+create extension if not exists pg_trgm;
+
 -- If you ran an older script without these owner fields:
 alter table public.yeti_configs
   add column if not exists user_id uuid references auth.users (id) on delete set null;
@@ -36,6 +38,27 @@ create index if not exists idx_yeti_configs_yeti_id on public.yeti_configs (yeti
 create index if not exists idx_yeti_configs_user_id on public.yeti_configs (user_id);
 create index if not exists idx_yeti_configs_user_email on public.yeti_configs (user_email);
 
+-- Cached FAQ answers. The API checks this before calling the AI, so repeated
+-- questions like "how much is the plan" and "how much is the plan worth" can
+-- reuse the same saved answer quickly.
+create table if not exists public.yeti_faq_answers (
+  id bigint generated always as identity primary key,
+  yeti_id text not null references public.yeti_configs (yeti_id) on delete cascade,
+  question text not null,
+  normalized_question text not null,
+  answer text not null,
+  hit_count integer not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (yeti_id, normalized_question)
+);
+
+create index if not exists idx_yeti_faq_answers_yeti_id
+  on public.yeti_faq_answers (yeti_id);
+
+create index if not exists idx_yeti_faq_answers_question_trgm
+  on public.yeti_faq_answers using gin (normalized_question gin_trgm_ops);
+
 -- -----------------------------------------------------------------------------
 -- 3. Row Level Security (RLS)
 -- -----------------------------------------------------------------------------
@@ -48,6 +71,7 @@ drop policy if exists "Public read yeti configs" on public.yeti_configs;
 drop policy if exists "Authenticated insert yeti configs" on public.yeti_configs;
 drop policy if exists "Users update own yeti configs" on public.yeti_configs;
 drop policy if exists "Users delete own yeti configs" on public.yeti_configs;
+drop policy if exists "Service can manage Yeti FAQ answers" on public.yeti_faq_answers;
 
 -- Widget + embed: read any config by yeti_id (anon key)
 create policy "Public read yeti configs"
@@ -75,6 +99,15 @@ create policy "Users delete own yeti configs"
   for delete
   to authenticated
   using (auth.uid() = user_id);
+
+alter table public.yeti_faq_answers enable row level security;
+
+create policy "Service can manage Yeti FAQ answers"
+  on public.yeti_faq_answers
+  for all
+  to service_role
+  using (true)
+  with check (true);
 
 -- -----------------------------------------------------------------------------
 -- 4. Auto-link Google user email and clean Eastern Time to each saved Yeti
@@ -108,12 +141,117 @@ create trigger trg_set_yeti_config_owner
   for each row
   execute function public.set_yeti_config_owner();
 
+-- Normalize question wording for fuzzy matching.
+create or replace function public.normalize_yeti_question(input text)
+returns text
+language sql
+immutable
+as $$
+  select trim(
+    regexp_replace(
+      regexp_replace(
+        lower(coalesce(input, '')),
+        '\b(please|hey|hi|hello|the|a|an|is|are|do|does|can|you|tell|me|about)\b',
+        ' ',
+        'g'
+      ),
+      '[^a-z0-9]+',
+      ' ',
+      'g'
+    )
+  );
+$$;
+
+create or replace function public.match_yeti_faq(
+  p_yeti_id text,
+  p_question text,
+  p_threshold real default 0.5
+)
+returns table (
+  id bigint,
+  answer text,
+  score real,
+  hit_count integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized text := public.normalize_yeti_question(p_question);
+begin
+  return query
+  with best_match as (
+    select
+      yfa.id,
+      yfa.answer,
+      similarity(yfa.normalized_question, normalized) as score,
+      yfa.hit_count
+    from public.yeti_faq_answers yfa
+    where yfa.yeti_id = p_yeti_id
+      and similarity(yfa.normalized_question, normalized) >= p_threshold
+    order by score desc, yfa.hit_count desc, yfa.updated_at desc
+    limit 1
+  ),
+  bumped as (
+    update public.yeti_faq_answers yfa
+    set hit_count = yfa.hit_count + 1,
+        updated_at = now()
+    from best_match
+    where yfa.id = best_match.id
+    returning yfa.id
+  )
+  select best_match.id, best_match.answer, best_match.score, best_match.hit_count
+  from best_match;
+end;
+$$;
+
+create or replace function public.upsert_yeti_faq(
+  p_yeti_id text,
+  p_question text,
+  p_answer text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized text := public.normalize_yeti_question(p_question);
+begin
+  if normalized = '' or length(coalesce(p_answer, '')) < 2 then
+    return;
+  end if;
+
+  insert into public.yeti_faq_answers (
+    yeti_id,
+    question,
+    normalized_question,
+    answer
+  )
+  values (
+    p_yeti_id,
+    p_question,
+    normalized,
+    p_answer
+  )
+  on conflict (yeti_id, normalized_question)
+  do update set
+    answer = excluded.answer,
+    question = excluded.question,
+    hit_count = public.yeti_faq_answers.hit_count + 1,
+    updated_at = now();
+end;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 5. API permissions (anon + authenticated clients)
 -- -----------------------------------------------------------------------------
 grant usage on schema public to anon, authenticated;
 grant select on public.yeti_configs to anon, authenticated;
 grant insert, update, delete on public.yeti_configs to authenticated;
+grant execute on function public.match_yeti_faq(text, text, real) to service_role;
+grant execute on function public.upsert_yeti_faq(text, text, text) to service_role;
 
 -- -----------------------------------------------------------------------------
 -- Done. In Supabase UI also confirm:

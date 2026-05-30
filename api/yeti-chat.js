@@ -27,6 +27,65 @@ function cleanReply(text) {
     .trim();
 }
 
+function getSupabaseConfig() {
+  return {
+    url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    key:
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY,
+  };
+}
+
+async function findCachedAnswer(yetiId, question) {
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key || !yetiId || !question) return null;
+
+  try {
+    const response = await fetch(`${url}/rest/v1/rpc/match_yeti_faq`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        p_yeti_id: yetiId,
+        p_question: question,
+        p_threshold: 0.5,
+      }),
+    });
+    if (!response.ok) return null;
+    const matches = await response.json();
+    return Array.isArray(matches) ? matches[0]?.answer || null : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveCachedAnswer(yetiId, question, answer) {
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key || !yetiId || !question || !answer) return;
+
+  try {
+    await fetch(`${url}/rest/v1/rpc/upsert_yeti_faq`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        p_yeti_id: yetiId,
+        p_question: question,
+        p_answer: answer,
+      }),
+    });
+  } catch {
+    // Cache is best-effort; never block chat.
+  }
+}
+
 async function callProvider(url, headers, model, messages) {
   const compactedMessages = compactMessages(messages);
   const guidedMessages = [
@@ -70,13 +129,19 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { messages } = req.body || {};
+  const { messages, yeti_id: yetiId, question } = req.body || {};
   if (!Array.isArray(messages)) {
     res.status(400).json({ error: "Missing messages" });
     return;
   }
 
   try {
+    const cached = await findCachedAnswer(yetiId, question);
+    if (cached) {
+      res.status(200).json({ reply: cleanReply(cached), cached: true });
+      return;
+    }
+
     if (process.env.OPENROUTER_API_KEY) {
       const reply = await callProvider(
         OPENROUTER_URL,
@@ -91,6 +156,7 @@ module.exports = async function handler(req, res) {
       );
 
       if (reply) {
+        await saveCachedAnswer(yetiId, question, reply);
         res.status(200).json({ reply });
         return;
       }
@@ -108,6 +174,7 @@ module.exports = async function handler(req, res) {
       );
 
       if (reply) {
+        await saveCachedAnswer(yetiId, question, reply);
         res.status(200).json({ reply });
         return;
       }
