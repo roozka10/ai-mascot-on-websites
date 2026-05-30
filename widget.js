@@ -16,7 +16,7 @@
     return;
   }
 
-  // The host where index.html (the widget) is deployed
+  // The host where the widget assets are deployed
   var host = self.src.replace(/\/widget\.js.*$/, "");
 
   // Create the iframe container
@@ -26,9 +26,9 @@
     "position:fixed;bottom:0;right:0;z-index:99999;pointer-events:none;width:100%;height:100%;";
 
   var iframe = document.createElement("iframe");
-  iframe.src = host + "/index.html?id=" + encodeURIComponent(yetiId) + "&embed=1";
+  iframe.src = host + "/widget/index.html?id=" + encodeURIComponent(yetiId) + "&embed=1";
   iframe.style.cssText =
-    "position:absolute;bottom:0;right:0;width:400px;height:520px;border:none;background:transparent;pointer-events:auto;color-scheme:normal;";
+    "position:absolute;bottom:0;right:0;width:260px;height:360px;border:none;background:transparent;pointer-events:auto;color-scheme:normal;";
   iframe.allow = "microphone";
   iframe.setAttribute("allowtransparency", "true");
   iframe.title = "Yeti Guide";

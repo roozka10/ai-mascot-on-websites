@@ -28,7 +28,7 @@
   var iframe = document.createElement("iframe");
   iframe.src = host + "/widget/index.html?id=" + encodeURIComponent(yetiId) + "&embed=1";
   iframe.style.cssText =
-    "position:absolute;bottom:0;right:0;width:400px;height:520px;border:none;background:transparent;pointer-events:auto;color-scheme:normal;";
+    "position:absolute;bottom:0;right:0;width:260px;height:360px;border:none;background:transparent;pointer-events:auto;color-scheme:normal;";
   iframe.allow = "microphone";
   iframe.setAttribute("allowtransparency", "true");
   iframe.title = "Yeti Guide";
