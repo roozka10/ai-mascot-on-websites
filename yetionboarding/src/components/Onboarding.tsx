@@ -577,6 +577,10 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <div className="relative mx-auto flex w-full max-w-[430px] flex-col items-center justify-center text-center">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
           <div className="relative">
+            <div className="relative mx-auto mb-5 max-w-[360px] rounded-[1.75rem] border border-border/70 bg-white px-6 py-4 text-center text-lg font-black leading-snug text-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.45)]">
+              {demoText}
+              <span className="absolute -bottom-3 left-1/2 h-6 w-6 -translate-x-1/2 rotate-45 border-b border-r border-border/70 bg-white" />
+            </div>
             <img src={yeti} alt="Yeti mascot" className="mx-auto h-64 w-64 object-contain drop-shadow-xl sm:h-72 sm:w-72" />
             <button
               type="button"
@@ -587,9 +591,6 @@ function LandingPage({ onStart }: { onStart: () => void }) {
             >
               {demoListening ? <Loader2 className="h-7 w-7 animate-spin" /> : <Mic className="h-7 w-7" />}
             </button>
-            <p className="mx-auto mt-4 max-w-xs text-sm font-semibold leading-6 text-muted-foreground">
-              {demoText}
-            </p>
           </div>
         </div>
       </section>

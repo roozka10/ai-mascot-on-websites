@@ -96,6 +96,10 @@ export function HeroWidget() {
         }}
       />
       <div className="relative">
+        <div className="relative mx-auto mb-5 max-w-[360px] rounded-[1.75rem] border border-border/70 bg-white px-6 py-4 text-center text-lg font-black leading-snug text-foreground shadow-soft">
+          {label}
+          <span className="absolute -bottom-3 left-1/2 h-6 w-6 -translate-x-1/2 rotate-45 border-b border-r border-border/70 bg-white" />
+        </div>
         <div className="relative grid place-items-center">
           <img
             src={yeti}
@@ -133,9 +137,6 @@ export function HeroWidget() {
             ))}
           </div>
         </div>
-        <p className="mx-auto mt-5 max-w-xs text-center text-sm font-semibold leading-relaxed text-muted-foreground">
-          {label}
-        </p>
       </div>
     </div>
   );
