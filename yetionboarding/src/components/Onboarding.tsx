@@ -2,7 +2,13 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { ArrowRight, ArrowLeft, Sparkles, Check, Copy, ShieldCheck, Clock, Globe, Loader2, Mic, Square } from "lucide-react";
 import yeti from "@/assets/yeti.png";
-import { generateYetiId, isSupabaseConfigured, saveYetiConfig, supabase } from "@/lib/supabase";
+import {
+  generateYetiId,
+  getAuthRedirectUrl,
+  isSupabaseConfigured,
+  saveYetiConfig,
+  supabase,
+} from "@/lib/supabase";
 
 const TOTAL = 3;
 
@@ -217,7 +223,15 @@ function GoogleIcon() {
   );
 }
 
-function LoginScreen({ onGoogle }: { onGoogle: () => void }) {
+function LoginScreen({
+  onGoogle,
+  loading,
+  error,
+}: {
+  onGoogle: () => void;
+  loading: boolean;
+  error: string;
+}) {
   return (
     <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 py-10">
       <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[520px] flex-col items-center justify-center text-center">
@@ -242,17 +256,26 @@ function LoginScreen({ onGoogle }: { onGoogle: () => void }) {
 
         {!isSupabaseConfigured && (
           <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            Add your Supabase env vars before Google login can work.
+            Supabase env vars are missing in this build. In Vercel, add{" "}
+            <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{" "}
+            <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code>, then redeploy.
+          </p>
+        )}
+
+        {error && (
+          <p className="mt-6 w-full max-w-sm rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
           </p>
         )}
 
         <button
+          type="button"
           onClick={onGoogle}
-          disabled={!isSupabaseConfigured}
+          disabled={!isSupabaseConfigured || loading}
           className="mt-8 inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-full border border-border bg-white px-5 py-4 text-sm font-semibold text-foreground shadow-[0_18px_55px_-34px_rgba(15,23,42,0.45)] transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <GoogleIcon />
-          Continue with Google
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
+          {loading ? "Redirecting to Google..." : "Continue with Google"}
         </button>
       </div>
     </main>
@@ -276,6 +299,7 @@ export default function Onboarding() {
   const [copied, setCopied] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const canContinue = name.trim().length > 0 && site.trim().length > 0;
@@ -339,19 +363,42 @@ export default function Onboarding() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data }) => {
+    let active = true;
+
+    const finishAuthCheck = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError && active) {
+          setError(exchangeError.message);
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      if (!active) return;
+
+      if (sessionError) {
+        setError(sessionError.message);
+      }
       setSession(data.session);
       setCheckingAuth(false);
-    });
+    };
+
+    void finishAuthCheck();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setCheckingAuth(false);
+      setAuthLoading(false);
     });
 
     return () => {
+      active = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -390,15 +437,18 @@ export default function Onboarding() {
     if (!isSupabaseConfigured) return;
 
     setError("");
+    setAuthLoading(true);
+
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: getAuthRedirectUrl(),
       },
     });
 
     if (authError) {
       setError(authError.message);
+      setAuthLoading(false);
     }
   };
 
@@ -500,7 +550,13 @@ export default function Onboarding() {
   }
 
   if (!session) {
-    return <LoginScreen onGoogle={signInWithGoogle} />;
+    return (
+      <LoginScreen
+        onGoogle={signInWithGoogle}
+        loading={authLoading}
+        error={error}
+      />
+    );
   }
 
   // Step 2 — horizontal layout

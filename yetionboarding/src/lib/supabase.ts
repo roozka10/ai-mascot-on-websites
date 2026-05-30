@@ -8,7 +8,19 @@ export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 export const supabase = createClient(
   SUPABASE_URL || "https://placeholder.supabase.co",
   SUPABASE_ANON_KEY || "missing-public-anon-key",
+  {
+    auth: {
+      flowType: "pkce",
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  },
 );
+
+export function getAuthRedirectUrl(): string {
+  return `${window.location.origin}${window.location.pathname}`;
+}
 
 // Generate a short unique ID like "y_8f3k2x"
 export function generateYetiId(): string {
