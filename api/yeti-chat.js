@@ -48,7 +48,8 @@ module.exports = async function handler(req, res) {
         {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": req.headers.origin || "https://yeti-widget.vercel.app",
+          "HTTP-Referer":
+            req.headers.origin || "https://ai-mascot-on-websites.vercel.app",
         },
         process.env.OPENROUTER_MODEL || "openrouter/owl-alpha",
         messages,

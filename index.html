@@ -277,8 +277,8 @@
 
       <!-- Character -->
       <div class="yeti-character">
-        <img class="yeti-img-idle" src="mainmascot.png" alt="Yeti Guide" />
-        <img class="yeti-img-thinking" src="mascotwithhandsup.png" alt="Yeti Thinking" />
+        <img class="yeti-img-idle" src="/mainmascot.png" alt="Yeti Guide" />
+        <img class="yeti-img-thinking" src="/mascotwithhandsup.png" alt="Yeti Thinking" />
       </div>
 
       <!-- Wait label (shown only during thinking state) -->
@@ -312,37 +312,49 @@
     // ——— Private API config. Secrets stay in server environment variables. ———
     const API_BASE_URL = window.location.origin;
 
-    const DEFAULT_PROMPT = `You are a helpful yeti named Yeti who assists visitors on websites.
-You are friendly, professional, and concise.
-Keep every reply to ONE short sentence, maximum two. Never give long answers.
-If someone asks where something is on the website, guide them with clear directions.
-Never be robotic or overly formal. Never use bullet points or lists.
-You are helping visitors on a website. The website has the following pages and features:
-Home, Pricing, Features, Contact. They sell amazing products.
-Always guide the user to exactly where they need to go with helpful directions.`;
+    const DEFAULT_PROMPT = `You are Yeti, a helpful website guide. Be friendly and concise. Keep replies to one short sentence.`;
 
     let SYSTEM_PROMPT = DEFAULT_PROMPT;
     let chatHistory = [];
+    let configReady = false;
+    let businessName = '';
 
-    // ——— Load custom personality from Supabase if ?id= is in URL ———
     async function loadYetiConfig() {
       const yetiId = params.get('id');
-      if (!yetiId) return;
+      if (!yetiId) {
+        configReady = true;
+        return;
+      }
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/yeti-config?id=${encodeURIComponent(yetiId)}`);
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          console.error('[Yeti] Config load failed:', res.status, data.error || 'unknown error');
+          setBubbleText('Yeti could not load your setup yet. Check Vercel env vars for Supabase.');
+          return;
+        }
+
         if (data?.prompt) {
           SYSTEM_PROMPT = data.prompt;
-          console.log(`[Yeti] Loaded custom personality for "${data.business_name}"`);
+          businessName = data.business_name || '';
+          console.log(`[Yeti] Loaded custom personality for "${businessName}"`);
+          setBubbleText(
+            businessName
+              ? `Hey! I'm the guide for ${businessName}. Ask me anything about this site!`
+              : 'Need help finding something? I can guide you.'
+          );
+        } else {
+          console.error('[Yeti] Config missing prompt for id:', yetiId);
         }
       } catch (err) {
-        console.warn('[Yeti] Failed to load config, using default:', err);
+        console.warn('[Yeti] Failed to load config:', err);
+      } finally {
+        configReady = true;
       }
     }
 
-    // Load config immediately (non-blocking — chat works with default until loaded)
     loadYetiConfig();
 
     // ——— Pick the best human-sounding voice ———
@@ -545,6 +557,10 @@ Always guide the user to exactly where they need to go with helpful directions.`
     }
 
     function startListening() {
+      if (!configReady) {
+        setBubbleText('Loading your Yeti setup...');
+        return;
+      }
       if (!recognition || isListening || isSpeaking) return;
       isListening = true;
       lastTranscript = '';
