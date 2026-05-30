@@ -491,13 +491,13 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           </div>
         </div>
 
-        <div className="relative mx-auto flex w-full max-w-[560px] flex-col items-center justify-center text-center lg:justify-self-center">
+        <div className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:translate-x-8 lg:-translate-y-8 lg:justify-self-center">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
           <iframe
             title="Yeti Guide voice demo"
             src="/widget/index.html?demo=1&large=1&embed=1"
             allow="microphone"
-            className="relative h-[620px] w-full max-w-[560px] border-0 bg-transparent"
+            className="relative h-[680px] w-full max-w-[640px] border-0 bg-transparent"
           />
         </div>
       </section>
