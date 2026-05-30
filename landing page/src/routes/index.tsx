@@ -14,9 +14,9 @@ import {
   Mic,
   ScanSearch,
   Smile,
-  Sparkles,
   Volume2,
   WandSparkles,
+  X,
   Zap,
 } from "lucide-react";
 
@@ -77,16 +77,27 @@ const steps = [
 ];
 
 const takes = [
-  "Most chatbots are not bad because AI is weak. They are bad because the experience feels like homework.",
-  "The best website assistant should answer first, not ask for an email first.",
-  "Visitors do not want a support portal. They want one clean answer and a reason to trust you.",
+  {
+    title: "AI is not the problem.",
+    body: "The problem is making visitors type into a tiny box before they get help.",
+  },
+  {
+    title: "Answer first. Ask later.",
+    body: "A good guide should help before it tries to collect emails, tickets, or extra forms.",
+  },
+  {
+    title: "Helpful beats clever.",
+    body: "Short, clear spoken answers build more trust than a chatbot trying to sound smart.",
+  },
 ];
 
 const comparisonRows = [
-  { label: "Answer speed", chatbot: 38, yeti: 88 },
-  { label: "Feels human", chatbot: 28, yeti: 82 },
-  { label: "Visitor effort", chatbot: 74, yeti: 22 },
-  { label: "Install friction", chatbot: 62, yeti: 18 },
+  { label: "Voice answers", yeti: true, chatbot: false },
+  { label: "Scans your website", yeti: true, chatbot: false },
+  { label: "Short human replies", yeti: true, chatbot: false },
+  { label: "Learns your brand personality", yeti: true, chatbot: false },
+  { label: "One script install", yeti: true, chatbot: true },
+  { label: "No form before helping", yeti: true, chatbot: false },
 ];
 
 function Index() {
@@ -247,58 +258,78 @@ function Index() {
 
       <section id="takes" className="py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="reveal max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary">Controversial takes</p>
-            <h2 className="mt-4 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
-              The chatbot era made websites feel colder.
-            </h2>
-          </div>
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {takes.map((take) => (
-              <article key={take} className="reveal rounded-[28px] border border-border/70 bg-white/70 p-7 shadow-soft card-lift">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-                  <Sparkles size={23} />
-                </div>
-                <p className="mt-6 text-xl font-black leading-relaxed tracking-tight">{take}</p>
-              </article>
-            ))}
+          <div className="reveal overflow-hidden rounded-[32px] bg-dark-surface p-7 text-white shadow-lift md:p-10">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.2em] text-secondary">
+                  Honest takes
+                </p>
+                <h2 className="mt-5 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
+                  Websites need guides, not louder chatbots.
+                </h2>
+                <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/65">
+                  The point is not to add another widget. The point is to make getting help feel effortless.
+                </p>
+              </div>
+              <div className="space-y-4">
+                {takes.map((take, index) => (
+                  <article key={take.title} className="rounded-[24px] border border-white/10 bg-white/[0.07] p-5">
+                    <div className="flex items-start gap-4">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground shadow-glow">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <h3 className="text-xl font-black tracking-tight">{take.title}</h3>
+                        <p className="mt-1 text-white/65 leading-relaxed">{take.body}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <section id="compare" className="py-24 lg:py-32 bg-gradient-to-b from-secondary/20 to-background">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="reveal grid gap-10 rounded-[32px] border border-border/70 bg-white/75 p-7 shadow-soft backdrop-blur md:p-10 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="reveal grid items-center gap-12 lg:grid-cols-[0.7fr_1.3fr]">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary">The clean comparison</p>
               <h2 className="mt-4 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
-                Old chatbot vs. Yeti Guide.
+                The choice is clear.
               </h2>
               <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                The graph is simple: less effort, faster answers, and a voice that feels like a real guide.
+                Yeti feels like a guide because it learns your site, speaks out loud, and keeps answers short.
               </p>
             </div>
-            <div className="space-y-6 rounded-[24px] bg-background p-6">
+            <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white shadow-lift">
+              <div className="grid grid-cols-[1.35fr_0.75fr_0.75fr] bg-dark-surface text-sm font-black text-white">
+                <div className="px-4 py-4 md:px-6">Feature</div>
+                <div className="px-3 py-4 text-center md:px-5">Yeti Guide</div>
+                <div className="px-3 py-4 text-center md:px-5">Old chatbot</div>
+              </div>
               {comparisonRows.map((row) => (
-                <div key={row.label}>
-                  <div className="mb-3 flex items-center justify-between text-sm font-black">
-                    <span>{row.label}</span>
-                    <span className="text-muted-foreground">Chatbot vs Yeti</span>
+                <div key={row.label} className="grid grid-cols-[1.35fr_0.75fr_0.75fr] border-t border-white text-sm">
+                  <div className="bg-muted/40 px-4 py-4 font-bold text-foreground md:px-6">{row.label}</div>
+                  <div className="grid place-items-center bg-secondary/35 px-3 py-4 md:px-5">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check size={16} />
+                    </span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="h-3 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-muted-foreground/35" style={{ width: `${row.chatbot}%` }} />
-                    </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-secondary/35">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${row.yeti}%` }} />
-                    </div>
+                  <div className="grid place-items-center bg-red-50 px-3 py-4 md:px-5">
+                    {row.chatbot ? (
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/80 text-primary-foreground">
+                        <Check size={16} />
+                      </span>
+                    ) : (
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-red-400 text-white">
+                        <X size={16} />
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
-              <div className="flex flex-wrap gap-4 pt-2 text-xs font-bold text-muted-foreground">
-                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-muted-foreground/35" /> Old chatbot</span>
-                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary" /> Yeti Guide</span>
-              </div>
             </div>
           </div>
         </div>
