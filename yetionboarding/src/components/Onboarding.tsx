@@ -110,103 +110,195 @@ async function fetchViaProxy(url: string): Promise<string | null> {
   return null;
 }
 
+type PageScan = {
+  url: string;
+  path: string;
+  title: string;
+  description: string;
+  headings: string[];
+  ctas: string[];
+  snippets: string[];
+  internalUrls: string[];
+};
+
+const MAX_SCAN_PAGES = 10;
+
+function cleanText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizePageUrl(href: string, baseUrl: string): string | null {
+  if (!href || /^(mailto:|tel:|sms:|javascript:)/i.test(href)) return null;
+
+  try {
+    const url = new URL(href, baseUrl);
+    const base = new URL(baseUrl);
+    if (url.origin !== base.origin) return null;
+
+    url.hash = "";
+    url.search = "";
+
+    if (
+      /\.(pdf|png|jpe?g|gif|webp|svg|mp4|mov|zip|css|js|ico|xml)$/i.test(url.pathname) ||
+      /\/(login|logout|cart|checkout|account|wp-admin)\b/i.test(url.pathname)
+    ) {
+      return null;
+    }
+
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+function compactList(items: string[], maxItems: number, maxLength = 90): string[] {
+  return [...new Set(items.map(cleanText).filter(Boolean))]
+    .filter((item) => item.length > 1)
+    .map((item) => (item.length > maxLength ? `${item.slice(0, maxLength - 1)}...` : item))
+    .slice(0, maxItems);
+}
+
 // ——— Deep HTML extraction ———
-function extractSiteInfo(html: string, bizName: string) {
+function extractPageScan(html: string, pageUrl: string, bizName: string): PageScan {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style, noscript, svg").forEach((el) => el.remove());
 
-  const title = doc.querySelector("title")?.textContent?.trim() || bizName;
+  const parsedUrl = new URL(pageUrl);
+
+  const title = cleanText(doc.querySelector("title")?.textContent || bizName);
   const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
   const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute("content") || "";
-  const keywords = doc.querySelector('meta[name="keywords"]')?.getAttribute("content") || "";
 
-  const navLinks = new Set<string>();
-  doc.querySelectorAll("nav a, header a, [role='navigation'] a, .nav a, .navbar a, .menu a").forEach((a) => {
-    const t = (a as HTMLAnchorElement).textContent?.trim().replace(/\s+/g, " ") || "";
-    if (t && t.length > 1 && t.length < 30 && !/^(http|#|javascript)/i.test(t)) navLinks.add(t);
-  });
-  doc.querySelectorAll("footer a").forEach((a) => {
-    const t = (a as HTMLAnchorElement).textContent?.trim().replace(/\s+/g, " ") || "";
-    if (t && t.length > 1 && t.length < 30 && !/^(http|#|javascript)/i.test(t)) navLinks.add(t);
-  });
-
-  const pageUrls = new Set<string>();
+  const internalUrls = new Set<string>();
   doc.querySelectorAll("a[href]").forEach((a) => {
     const href = (a as HTMLAnchorElement).getAttribute("href");
-    if (href && href.startsWith("/") && href.length > 1 && !href.includes(".")) {
-      pageUrls.add(href.split("?")[0].split("#")[0]);
-    }
+    const normalized = href ? normalizePageUrl(href, pageUrl) : null;
+    if (normalized) internalUrls.add(normalized);
   });
 
   const headings: string[] = [];
-  doc.querySelectorAll("h1, h2, h3").forEach((h) => {
-    const t = h.textContent?.trim().replace(/\s+/g, " ") || "";
-    if (t && t.length > 2 && t.length < 100) headings.push(t);
-  });
+  doc.querySelectorAll("h1, h2, h3").forEach((h) => headings.push(h.textContent || ""));
 
   const ctas = new Set<string>();
   doc.querySelectorAll('button, a.btn, a.button, [class*="cta"], [class*="btn"]').forEach((el) => {
-    const t = el.textContent?.trim().replace(/\s+/g, " ") || "";
+    const t = cleanText(el.textContent || "");
     if (t && t.length > 2 && t.length < 40) ctas.add(t);
   });
 
-  const bodyText = doc.body?.innerText?.replace(/\s+/g, " ").trim().slice(0, 2000) || "";
+  const snippets: string[] = [];
+  doc.querySelectorAll("main p, main li, section p, section li, article p, article li").forEach((el) => {
+    const text = cleanText(el.textContent || "");
+    if (text.length >= 45 && text.length <= 260) snippets.push(text);
+  });
 
-  let structuredData = "";
+  const structuredSnippets: string[] = [];
   doc.querySelectorAll('script[type="application/ld+json"]').forEach((s) => {
     try {
       const d = JSON.parse(s.textContent || "");
-      if (d.name) structuredData += `Name: ${d.name}\n`;
-      if (d.description) structuredData += `Description: ${d.description}\n`;
+      const items = Array.isArray(d) ? d : [d];
+      items.forEach((item) => {
+        if (item.name) structuredSnippets.push(`Name: ${item.name}`);
+        if (item.description) structuredSnippets.push(`Description: ${item.description}`);
+        if (item.telephone) structuredSnippets.push(`Phone: ${item.telephone}`);
+        if (item.address?.streetAddress) structuredSnippets.push(`Address: ${item.address.streetAddress}`);
+      });
     } catch {
       /* skip */
     }
   });
 
   return {
+    url: pageUrl,
+    path: parsedUrl.pathname === "/" ? "Home" : parsedUrl.pathname.replace(/^\/|\/$/g, ""),
     title,
-    description: metaDesc || ogDesc,
-    keywords,
-    pages: [...navLinks].slice(0, 15),
-    pageUrls: [...pageUrls].slice(0, 15),
-    headings: [...new Set(headings)].slice(0, 15),
-    ctas: [...ctas].slice(0, 8),
-    bodyText,
-    structuredData,
+    description: cleanText(metaDesc || ogDesc),
+    headings: compactList(headings, 8),
+    ctas: compactList([...ctas], 6, 45),
+    snippets: compactList([...structuredSnippets, ...snippets], 8, 180),
+    internalUrls: [...internalUrls],
   };
+}
+
+function extractSitemapUrls(xml: string, baseUrl: string): string[] {
+  const urls = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)]
+    .map((match) => normalizePageUrl(match[1], baseUrl))
+    .filter((url): url is string => Boolean(url));
+  return [...new Set(urls)];
+}
+
+async function scanWebsite(
+  startUrl: string,
+  bizName: string,
+  onStatus: (message: string) => void,
+): Promise<PageScan[]> {
+  onStatus("Scanning homepage...");
+  const homeHtml = await fetchViaProxy(startUrl);
+  if (!homeHtml) return [];
+
+  const homeScan = extractPageScan(homeHtml, startUrl, bizName);
+  const baseUrl = new URL(startUrl).origin;
+
+  onStatus("Finding important pages...");
+  const sitemapHtml = await fetchViaProxy(`${baseUrl}/sitemap.xml`);
+  const sitemapUrls = sitemapHtml ? extractSitemapUrls(sitemapHtml, startUrl) : [];
+
+  const candidates = [...new Set([startUrl, ...sitemapUrls, ...homeScan.internalUrls])]
+    .filter((url) => normalizePageUrl(url, startUrl))
+    .slice(0, MAX_SCAN_PAGES);
+
+  const scans: PageScan[] = [homeScan];
+  for (const pageUrl of candidates.filter((candidate) => candidate !== startUrl)) {
+    onStatus(`Scanning ${new URL(pageUrl).pathname || "/"}...`);
+    const html = await fetchViaProxy(pageUrl);
+    if (!html) continue;
+    scans.push(extractPageScan(html, pageUrl, bizName));
+    if (scans.length >= MAX_SCAN_PAGES) break;
+  }
+
+  return scans;
 }
 
 function buildVoicePrompt({
   name,
   url,
   transcript,
-  title,
-  description,
-  pages,
+  scans,
 }: {
   name: string;
   url: string;
   transcript: string;
-  title: string;
-  description: string;
-  pages: string[];
+  scans: PageScan[];
 }) {
-  return `You are Yeti, a helpful mascot chatbot for ${name}.
+  const pageKnowledge = scans
+    .map((page) => {
+      const facts = [
+        page.description,
+        ...page.headings,
+        ...page.snippets,
+        page.ctas.length ? `Actions: ${page.ctas.join(", ")}` : "",
+      ].filter(Boolean);
+      return `- ${page.path} (${new URL(page.url).pathname || "/"}): ${facts.join(" | ")}`;
+    })
+    .join("\n");
 
-Use this owner-provided business briefing as your source of truth:
-${transcript.trim()}
+  const ownerNotes = transcript.trim()
+    ? `\nOwner notes: ${transcript.trim().slice(0, 700)}`
+    : "";
+
+  return `You are Yeti, the website guide for ${name}. Use ONLY the knowledge below.
 
 Website: ${url}
-${title ? `Website title: ${title}` : ""}
-${description ? `Website description: ${description}` : ""}
-${pages.length ? `Known pages: ${pages.join(", ")}` : ""}
+${ownerNotes}
+
+Site knowledge:
+${pageKnowledge || "- Website scan found limited text. Ask a concise clarifying question if needed."}
 
 Rules:
 - Answer like a knowledgeable member of ${name}'s team.
-- Be helpful, professional, natural, and concise.
-- Keep quick answers to 1-2 sentences unless the visitor asks for detail.
-- Use the owner's briefing first, then website context.
-- Never make up prices, guarantees, policies, or availability that were not provided.
+- Be friendly, clear, and very concise: 1-2 short sentences.
+- Prefer scanned site knowledge over owner notes.
+- Never invent prices, policies, guarantees, hours, or availability.
 - When directing to a section on the current page, append [scroll:#id] or [scroll:.class].
 - When directing to another page, append [navigate:/page-url].`;
 }
@@ -451,60 +543,29 @@ export default function Onboarding() {
 
   const saveVoicePersonality = useCallback(async () => {
     if (!name.trim() || !site.trim()) return;
-    if (!transcript.trim()) {
-      setError("Tell Yeti about the business first, or type the details in the transcript box.");
-      return;
-    }
 
     setLoading(true);
     setError("");
-    setStatusText("Scanning website...");
+    setStatusText("Preparing scan...");
 
     try {
       let url = site.trim();
       if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
-      const html = await fetchViaProxy(url);
-      const info = html ? extractSiteInfo(html, name) : null;
-
-      let sitemapPages: string[] = [];
-      try {
-        const baseUrl = new URL(url).origin;
-        const sitemapHtml = await fetchViaProxy(`${baseUrl}/sitemap.xml`);
-        if (sitemapHtml) {
-          const matches = sitemapHtml.match(/<loc>(.*?)<\/loc>/g) || [];
-          sitemapPages = matches.map((m) => m.replace(/<\/?loc>/g, "")).slice(0, 20);
-        }
-      } catch {
-        /* skip */
+      const scans = await scanWebsite(url, name, setStatusText);
+      if (!scans.length && !transcript.trim()) {
+        setError("Yeti could not scan this website. Add a short voice note or try the full https:// URL.");
+        return;
       }
 
-      const allPages = [
-        ...new Set([
-          ...(info?.pages || []),
-          ...(info?.pageUrls.map((u) => u.replace(/\//g, " ").trim()) || []),
-          ...sitemapPages
-            .map((u) => {
-              try {
-                return new URL(u).pathname.replace(/\//g, " ").trim();
-              } catch {
-                return "";
-              }
-            })
-            .filter(Boolean),
-        ]),
-      ]
-        .filter((p) => p.length > 1)
-        .slice(0, 20);
+      const allPages = scans.map((scan) => scan.path).filter(Boolean).slice(0, 20);
 
       setStatusText("Saving your Yeti...");
       const voicePrompt = buildVoicePrompt({
         name,
         url,
         transcript,
-        title: info?.title || "",
-        description: info?.description || "",
-        pages: allPages,
+        scans,
       });
 
       const id = generateYetiId();
@@ -690,13 +751,13 @@ export default function Onboarding() {
                   placeholder={
                     voiceStarted
                       ? ""
-                      : "Tell me what you sell, who you help, your offers, prices, policies, tone, and important pages."
+                      : "Optional: add tone, offers, prices, policies, or anything the website may not say clearly."
                   }
                   className="w-full resize-none bg-transparent text-center text-xl font-bold leading-7 tracking-[-0.035em] text-foreground placeholder:text-foreground outline-none sm:text-2xl sm:leading-8"
                 />
                 {!voiceStarted && !transcript && !interimTranscript && (
                   <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                    Tap the mic when you're ready. This becomes Yeti's personality.
+                    Yeti will scan your website first. Voice notes are optional.
                   </p>
                 )}
                 <div className="absolute -bottom-[15px] left-1/2 h-8 w-8 -translate-x-1/2 rotate-45 border-b-[3px] border-r-[3px] border-foreground/90 bg-white" />
@@ -730,7 +791,7 @@ export default function Onboarding() {
                 {listening ? "Listening... speak naturally" : "Tap the mic to start"}
               </p>
               <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-                Say what you sell, who you help, your offers, tone, policies, and anything visitors should know.
+                Yeti will crawl key pages and keep the saved AI prompt short. Use the mic only for extra details.
               </p>
 
               {!speechSupported && (
@@ -765,7 +826,7 @@ export default function Onboarding() {
                 </button>
                 <button
                   onClick={saveVoicePersonality}
-                  disabled={loading || !transcript.trim()}
+                  disabled={loading}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground font-medium py-3 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                 >
                   {loading ? (
