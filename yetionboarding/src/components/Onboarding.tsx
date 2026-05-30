@@ -365,36 +365,34 @@ export default function Onboarding() {
 
     let active = true;
 
-    const finishAuthCheck = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError && active) {
-          setError(exchangeError.message);
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-
-      const { data, error: sessionError } = await supabase.auth.getSession();
-      if (!active) return;
-
-      if (sessionError) {
-        setError(sessionError.message);
-      }
-      setSession(data.session);
-      setCheckingAuth(false);
+    const clearOAuthParamsFromUrl = () => {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("code") && !url.searchParams.has("error")) return;
+      url.searchParams.delete("code");
+      url.searchParams.delete("error");
+      url.searchParams.delete("error_code");
+      url.searchParams.delete("error_description");
+      window.history.replaceState({}, document.title, url.pathname + url.search);
     };
 
-    void finishAuthCheck();
+    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (!active) return;
+      if (sessionError) setError(sessionError.message);
+      setSession(data.session);
+      setCheckingAuth(false);
+      if (data.session) clearOAuthParamsFromUrl();
+    });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!active) return;
       setSession(nextSession);
       setCheckingAuth(false);
       setAuthLoading(false);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        clearOAuthParamsFromUrl();
+      }
     });
 
     return () => {
