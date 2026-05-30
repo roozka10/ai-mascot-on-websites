@@ -1,6 +1,25 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { ArrowRight, ArrowLeft, Sparkles, Check, Copy, ShieldCheck, Clock, Globe, Loader2, Mic, Square } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Sparkles,
+  Check,
+  Copy,
+  ShieldCheck,
+  Clock,
+  Globe,
+  Loader2,
+  Mic,
+  Square,
+  BotOff,
+  Code2,
+  MessageSquareText,
+  ScanSearch,
+  Smile,
+  Volume2,
+  Zap,
+} from "lucide-react";
 import yeti from "@/assets/yeti.png";
 import {
   generateYetiId,
@@ -374,8 +393,156 @@ function LoginScreen({
   );
 }
 
+function LandingPage({ onStart }: { onStart: () => void }) {
+  const problems = [
+    {
+      icon: <MessageSquareText className="h-5 w-5" />,
+      title: "Tiny chatbot boxes",
+      text: "Visitors ask one thing and get a form, a ticket, or a tiny typing prison.",
+    },
+    {
+      icon: <BotOff className="h-5 w-5" />,
+      title: "Robotic answers",
+      text: "Nobody wants a six-paragraph bot essay when they just need a quick answer.",
+    },
+    {
+      icon: <Smile className="h-5 w-5" />,
+      title: "No human feel",
+      text: "Yeti talks like a friendly guide, not a support script wearing a fake smile.",
+    },
+  ];
+
+  const steps = [
+    { icon: <ScanSearch className="h-5 w-5" />, title: "Scan your site", text: "Paste your website and Yeti learns the important pages." },
+    { icon: <Volume2 className="h-5 w-5" />, title: "Add voice", text: "Optional voice notes teach Yeti your tone and extra details." },
+    { icon: <Code2 className="h-5 w-5" />, title: "Paste one script", text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it." },
+  ];
+
+  return (
+    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
+      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5">
+        <button type="button" onClick={onStart} className="flex items-center gap-2 rounded-full px-2 py-1 text-left">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary/10">
+            <img src={yeti} alt="" className="h-8 w-8 object-contain" />
+          </span>
+          <span className="text-base font-black tracking-tight">Yeti Guide</span>
+        </button>
+        <button
+          type="button"
+          onClick={onStart}
+          className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_16px_45px_-24px_rgba(123,111,230,0.85)] transition hover:bg-primary/90"
+        >
+          Create your Yeti
+        </button>
+      </nav>
+
+      <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:pb-24 lg:pt-20">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/75 px-4 py-2 text-xs font-bold text-primary shadow-sm backdrop-blur">
+            <Zap className="h-3.5 w-3.5" />
+            Voice-first help for websites
+          </div>
+          <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.06em] text-foreground sm:text-6xl lg:text-7xl">
+            Your website does not need another{" "}
+            <span className="text-muted-foreground line-through decoration-accent/70">chatbot</span>.
+            <br />
+            It needs a <span className="text-primary">guide</span>.
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
+            Yeti scans your site, learns what matters, and gives visitors short spoken answers.
+            No forms, no typing homework, no awkward bot vibes.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onStart}
+              className="group inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-[0_22px_55px_-26px_rgba(123,111,230,0.9)] transition hover:bg-primary/90"
+            >
+              Build my Yeti
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+            </button>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center rounded-full border border-border bg-white/70 px-7 py-4 text-sm font-bold text-foreground shadow-sm backdrop-blur transition hover:bg-white"
+            >
+              See how it works
+            </a>
+          </div>
+        </div>
+
+        <div className="relative mx-auto w-full max-w-[430px]">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
+          <div className="relative rounded-[2rem] border border-white/80 bg-white/72 p-6 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.6)] backdrop-blur-xl">
+            <div className="ml-auto max-w-[84%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-sm font-bold leading-6 text-primary-foreground">
+              What does this site do?
+            </div>
+            <div className="mt-3 max-w-[92%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-sm font-semibold leading-6 text-foreground shadow-sm">
+              Yeti learns your pages and answers visitors out loud, like a friendly guide who actually read the website.
+            </div>
+            <img src={yeti} alt="Yeti mascot" className="mx-auto mt-4 h-40 w-40 object-contain drop-shadow-xl" />
+            <button
+              type="button"
+              onClick={onStart}
+              className="mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_46px_-12px_rgba(123,111,230,0.95)] transition hover:scale-105"
+              aria-label="Start creating your Yeti"
+            >
+              <Mic className="h-7 w-7" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="max-w-2xl">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">How it works</p>
+          <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+            Three steps. No chatbot ceremony.
+          </h2>
+        </div>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {steps.map((step) => (
+            <article key={step.title} className="rounded-[1.75rem] border border-border/70 bg-white/72 p-6 shadow-sm backdrop-blur">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                {step.icon}
+              </div>
+              <h3 className="mt-5 text-xl font-black tracking-tight">{step.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)]">
+            <h2 className="text-3xl font-black tracking-[-0.04em]">
+              We are fixing the industry everyone quietly hates.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/68">
+              Website help should feel like talking to someone who knows the place, not wrestling
+              a popup that asks for your email before answering anything.
+            </p>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {problems.map((problem) => (
+              <article key={problem.title} className="rounded-[1.75rem] border border-border/70 bg-white/72 p-6 shadow-sm backdrop-blur">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                  {problem.icon}
+                </div>
+                <h3 className="mt-5 text-lg font-black tracking-tight">{problem.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{problem.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function Onboarding() {
   const [step, setStep] = useState(0);
+  const [showLogin, setShowLogin] = useState(false);
   const [name, setName] = useState("");
   const [site, setSite] = useState("");
   const [loading, setLoading] = useState(false);
@@ -606,6 +773,10 @@ export default function Onboarding() {
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </main>
     );
+  }
+
+  if (!session && !showLogin) {
+    return <LandingPage onStart={() => setShowLogin(true)} />;
   }
 
   if (!session) {
