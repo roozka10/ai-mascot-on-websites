@@ -21,13 +21,20 @@ function compactMessages(messages) {
   return [compactSystem, ...rest.slice(-3)].filter(Boolean);
 }
 
+function cleanReply(text) {
+  return String(text || "")
+    .replace(/\[(?:navigate|scroll):[^\]]*\]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function callProvider(url, headers, model, messages) {
   const compactedMessages = compactMessages(messages);
   const guidedMessages = [
     {
       role: "system",
       content:
-        "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths.",
+        "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths. Never output bracket commands like [navigate:/] or [scroll:#id].",
     },
     ...compactedMessages,
   ];
@@ -48,7 +55,7 @@ async function callProvider(url, headers, model, messages) {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content?.trim();
+  return cleanReply(data.choices?.[0]?.message?.content);
 }
 
 export default async function handler(req, res) {

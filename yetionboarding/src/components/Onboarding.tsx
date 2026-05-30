@@ -301,8 +301,7 @@ Rules:
 - Prefer scanned site knowledge over owner notes.
 - Never invent prices, policies, guarantees, hours, or availability.
 - Mention clean domains only, like example.com. No https, www, slashes, or long paths.
-- When directing to a section on the current page, append [scroll:#id] or [scroll:.class].
-- When directing to another page, append [navigate:/page-url].`;
+- Do not output bracket commands like [navigate:/] or [scroll:#id]. Just speak naturally.`;
 }
 
 function GoogleIcon() {
