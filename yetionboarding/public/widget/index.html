@@ -220,6 +220,11 @@
     }
 
     /* TALKING — happy bounce */
+    .yeti-state-talking .yeti-bubble {
+      opacity: 0 !important;
+      transform: translateY(8px) scale(0.95);
+      pointer-events: none;
+    }
     .yeti-state-talking .yeti-character {
       animation: yetiBounce 0.45s ease-in-out infinite;
     }
@@ -413,6 +418,15 @@
       return { cleanText, command };
     }
 
+    function cleanSpeechText(text) {
+      return text
+        .replace(/https?:\/\/(www\.)?/gi, '')
+        .replace(/\bwww\./gi, '')
+        .replace(/\b([a-z0-9-]+\.[a-z]{2,})(?:\/[^\s.,!?)]*)?/gi, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     // ——— Speak text using Web Speech Synthesis ———
     function yetiSpeak(text) {
       if (isSpeaking) return;
@@ -421,7 +435,8 @@
       isSpeaking = true;
 
       // Parse commands
-      const { cleanText, command } = parseCommands(text);
+      const { cleanText: parsedText, command } = parseCommands(text);
+      const cleanText = cleanSpeechText(parsedText);
 
       // Send command to parent page
       if (command && window.parent !== window) {
@@ -429,7 +444,6 @@
         console.log('[Yeti] Guide command:', command);
       }
 
-      setBubbleText(cleanText);
       setYetiState('talking');
 
       const utterance = new SpeechSynthesisUtterance(cleanText);

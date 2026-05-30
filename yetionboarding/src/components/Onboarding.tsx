@@ -296,9 +296,11 @@ ${pageKnowledge || "- Website scan found limited text. Ask a concise clarifying 
 
 Rules:
 - Answer like a knowledgeable member of ${name}'s team.
-- Be friendly, clear, and very concise: 1-2 short sentences.
+- Be human, fun, warm, and interesting, but still easy to understand.
+- Keep answers short: one simple sentence when possible, max two short sentences.
 - Prefer scanned site knowledge over owner notes.
 - Never invent prices, policies, guarantees, hours, or availability.
+- When mentioning a website, say only the clean domain like example.com. Do not say "https", "www", slashes, or long URL paths.
 - When directing to a section on the current page, append [scroll:#id] or [scroll:.class].
 - When directing to another page, append [navigate:/page-url].`;
 }

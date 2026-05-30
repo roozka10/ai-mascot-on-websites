@@ -9,10 +9,24 @@ function setCors(res) {
 }
 
 async function callProvider(url, headers, model, messages) {
+  const guidedMessages = [
+    {
+      role: "system",
+      content:
+        "Style guardrail: answer short, simple, human, warm, fun, and interesting. Prefer one sentence, max two short sentences. When saying a URL, say only the clean domain like example.com; never say https, www, slashes, or long URL paths.",
+    },
+    ...messages,
+  ];
+
   const response = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify({ model, messages, max_tokens: 100, temperature: 0.7 }),
+    body: JSON.stringify({
+      model,
+      messages: guidedMessages,
+      max_tokens: 70,
+      temperature: 0.75,
+    }),
   });
 
   if (!response.ok) {
