@@ -13,6 +13,9 @@
       min-height: 100vh;
       overflow: hidden;
     }
+    body.yeti-demo-large {
+      min-height: 620px;
+    }
 
     /* ——————————————————————————————————
        YETI WIDGET — everything below here
@@ -38,6 +41,16 @@
       align-items: center;
       width: 200px;
     }
+    body.yeti-demo-large #yeti-widget {
+      bottom: 34px;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      align-items: center;
+    }
+    body.yeti-demo-large .yeti-inner {
+      width: min(440px, calc(100vw - 32px));
+    }
 
     /* ——— Speech bubble ——— */
     .yeti-bubble {
@@ -59,6 +72,27 @@
       opacity: 0;
       transform: translateY(8px) scale(0.95);
       animation: bubbleIn 0.5s 0.6s forwards;
+    }
+    body.yeti-demo-large .yeti-bubble {
+      max-width: min(430px, calc(100vw - 40px));
+      padding: 22px 30px;
+      border-radius: 28px;
+      font-size: 26px;
+      line-height: 1.25;
+      margin-bottom: 18px;
+      box-shadow: 0 20px 46px rgba(15,23,42,0.12);
+    }
+    body.yeti-demo-large .yeti-bubble::after {
+      bottom: -20px;
+      border-left-width: 20px;
+      border-right-width: 20px;
+      border-top-width: 20px;
+    }
+    body.yeti-demo-large .yeti-bubble::before {
+      bottom: -24px;
+      border-left-width: 22px;
+      border-right-width: 22px;
+      border-top-width: 22px;
     }
     /* Bubble tail */
     .yeti-bubble::after {
@@ -92,6 +126,10 @@
       height: 110px;
       cursor: pointer;
       animation: yetiEntrance 0.6s 0.2s both;
+    }
+    body.yeti-demo-large .yeti-character {
+      width: 220px;
+      height: 220px;
     }
     .yeti-character img {
       width: 100%;
@@ -131,6 +169,16 @@
       margin-top: 4px;
       transition: transform 0.15s, background 0.2s;
       box-shadow: 0 3px 10px rgba(123,111,230,0.3);
+    }
+    body.yeti-demo-large .yeti-mic-btn {
+      width: 76px;
+      height: 76px;
+      margin-top: 18px;
+      border-width: 4px;
+    }
+    body.yeti-demo-large .yeti-mic-btn svg {
+      width: 34px;
+      height: 34px;
     }
     .yeti-mic-btn:hover {
       transform: scale(1.1);
@@ -314,7 +362,11 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const isDemo = params.get('demo') === '1';
+    const isDemoLarge = params.get('large') === '1';
     const demoStorageKey = 'yeti-guide-landing-demo-used';
+    if (isDemoLarge) {
+      document.body.classList.add('yeti-demo-large');
+    }
 
     // ——— DOM refs ———
     const widget = document.getElementById('yeti-widget');
