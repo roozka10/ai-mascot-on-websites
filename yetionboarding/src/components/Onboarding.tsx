@@ -12,8 +12,7 @@ import {
 
 const TOTAL = 3;
 
-// CHANGE THIS to your deployed widget URL
-const WIDGET_HOST = "https://yeti-widget.vercel.app";
+const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
 
 type SpeechRecognitionResultListLike = {
   length: number;
