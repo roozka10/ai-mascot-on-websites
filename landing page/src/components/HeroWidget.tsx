@@ -2,36 +2,26 @@ import { useState } from "react";
 import yeti from "@/assets/yeti-mascot.png";
 import { Mic, Volume2, Sparkles } from "lucide-react";
 
-const replies = [
-  {
-    question: "What does this site do?",
-    answer:
-      "Yeti scans your website, learns the important pages, and gives visitors quick spoken help.",
-  },
-  {
-    question: "How do I install it?",
-    answer:
-      "Copy one script into your website footer, or ask Cursor, Claude Code, or Codex to add it for you.",
-  },
-  {
-    question: "Why is voice better?",
-    answer:
-      "Because people would rather ask out loud than wrestle with another tiny chatbot box.",
-  },
-];
-
 export function HeroWidget() {
-  const [active, setActive] = useState(0);
+  const [played, setPlayed] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [label, setLabel] = useState("Tap once to hear what Yeti can do.");
 
-  const playReply = (index = active) => {
-    const reply = replies[index];
-    setActive(index);
+  const playReply = () => {
+    if (played) {
+      setLabel("Create your Yeti to try the real voice guide on your own site.");
+      return;
+    }
+
+    const answer =
+      "Yeti can scan your website, learn the important pages, and answer visitors out loud with short helpful replies.";
+    setPlayed(true);
+    setLabel("Create your Yeti to try the real voice guide on your own site.");
     setSpeaking(true);
 
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(reply.answer);
+      const utterance = new SpeechSynthesisUtterance(answer);
       utterance.rate = 1.03;
       utterance.pitch = 1.08;
       utterance.onend = () => setSpeaking(false);
@@ -65,23 +55,12 @@ export function HeroWidget() {
           </span>
         </div>
 
-        <div className="space-y-3">
-          <div className="ml-auto max-w-[82%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-sm font-semibold leading-relaxed text-primary-foreground shadow-soft">
-            {replies[active].question}
-          </div>
-          <div className="max-w-[92%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 shadow-soft">
-            <p className="text-sm font-semibold leading-relaxed text-foreground">
-              {replies[active].answer}
-            </p>
-          </div>
-        </div>
-
         {/* Mascot */}
-        <div className="relative grid place-items-center py-4">
+        <div className="relative grid place-items-center py-6">
           <img
             src={yeti}
             alt="Yeti mascot"
-            className="w-40 h-40 object-contain yeti-float drop-shadow-xl"
+            className="w-52 h-52 object-contain yeti-float drop-shadow-xl"
           />
         </div>
 
@@ -98,7 +77,7 @@ export function HeroWidget() {
           </div>
           <button
             type="button"
-            onClick={() => playReply(active)}
+            onClick={playReply}
             aria-label="Speak to Yeti"
             className="w-14 h-14 cursor-pointer rounded-full bg-primary text-primary-foreground grid place-items-center shadow-glow pulse-glow transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary/25"
           >
@@ -115,22 +94,9 @@ export function HeroWidget() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-2">
-          {replies.map((reply, index) => (
-            <button
-              key={reply.question}
-              type="button"
-              onClick={() => playReply(index)}
-              className={`cursor-pointer rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-primary/20 ${
-                active === index
-                  ? "bg-primary text-primary-foreground shadow-soft"
-                  : "bg-white/70 text-foreground hover:bg-white"
-              }`}
-            >
-              Ask: {reply.question}
-            </button>
-          ))}
-        </div>
+        <p className="mx-auto mt-5 max-w-xs text-center text-sm font-semibold leading-relaxed text-muted-foreground">
+          {label}
+        </p>
       </div>
     </div>
   );

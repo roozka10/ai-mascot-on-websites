@@ -397,6 +397,9 @@ function LoginScreen({
 }
 
 function LandingPage({ onStart }: { onStart: () => void }) {
+  const [demoPlayed, setDemoPlayed] = useState(false);
+  const [demoText, setDemoText] = useState("Tap once to hear what Yeti can do.");
+
   const problems = [
     {
       icon: <MessageSquareText className="h-5 w-5" />,
@@ -421,15 +424,52 @@ function LandingPage({ onStart }: { onStart: () => void }) {
     { icon: <Code2 className="h-5 w-5" />, title: "Paste one script", text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it." },
   ];
 
+  const voiceBenefits = [
+    { icon: <Zap className="h-5 w-5" />, title: "Faster answers", text: "Visitors ask out loud and get a short reply without typing a mini essay." },
+    { icon: <Mic className="h-5 w-5" />, title: "Natural questions", text: "No exact keywords. People can ask the way they actually talk." },
+    { icon: <Volume2 className="h-5 w-5" />, title: "Spoken help", text: "Yeti talks back like a friendly guide, not a support ticket robot." },
+  ];
+
+  const playDemo = () => {
+    if (demoPlayed) {
+      setDemoText("Create your Yeti to try the real voice guide on your own site.");
+      return;
+    }
+
+    const text = "Yeti can scan your website, learn the important pages, and answer visitors out loud with short helpful replies.";
+    setDemoPlayed(true);
+    setDemoText("Create your Yeti to try the real voice guide on your own site.");
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.04;
+      utterance.pitch = 1.08;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5">
+      <nav className="sticky top-3 z-40 mx-auto flex w-[calc(100%-24px)] max-w-5xl items-center justify-between rounded-full border border-white/70 bg-white/82 px-3 py-2 shadow-[0_18px_58px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl">
         <button type="button" onClick={onStart} className="flex items-center gap-2 rounded-full px-2 py-1 text-left">
           <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary/10">
             <img src={yeti} alt="" className="h-8 w-8 object-contain" />
           </span>
           <span className="text-base font-black tracking-tight">Yeti Guide</span>
         </button>
+        <div className="hidden items-center gap-1 md:flex">
+          {[
+            ["How it works", "#how-it-works"],
+            ["Problem", "#problem"],
+            ["Voice", "#voice"],
+            ["Mission", "#mission"],
+          ].map(([label, href]) => (
+            <a key={href} href={href} className="rounded-full px-3 py-2 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground">
+              {label}
+            </a>
+          ))}
+        </div>
         <button
           type="button"
           onClick={onStart}
@@ -475,22 +515,19 @@ function LandingPage({ onStart }: { onStart: () => void }) {
 
         <div className="relative mx-auto w-full max-w-[430px]">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
-          <div className="relative rounded-[2rem] border border-white/80 bg-white/72 p-6 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.6)] backdrop-blur-xl">
-            <div className="ml-auto max-w-[84%] rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-sm font-bold leading-6 text-primary-foreground">
-              What does this site do?
-            </div>
-            <div className="mt-3 max-w-[92%] rounded-2xl rounded-bl-sm border border-border bg-white px-4 py-3 text-sm font-semibold leading-6 text-foreground shadow-sm">
-              Yeti learns your pages and answers visitors out loud, like a friendly guide who actually read the website.
-            </div>
-            <img src={yeti} alt="Yeti mascot" className="mx-auto mt-4 h-40 w-40 object-contain drop-shadow-xl" />
+          <div className="relative rounded-[2rem] border border-white/80 bg-white/72 p-8 text-center shadow-[0_30px_90px_-48px_rgba(15,23,42,0.6)] backdrop-blur-xl">
+            <img src={yeti} alt="Yeti mascot" className="mx-auto h-52 w-52 object-contain drop-shadow-xl" />
             <button
               type="button"
-              onClick={onStart}
-              className="mx-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_46px_-12px_rgba(123,111,230,0.95)] transition hover:scale-105"
-              aria-label="Start creating your Yeti"
+              onClick={playDemo}
+              className="mx-auto mt-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_46px_-12px_rgba(123,111,230,0.95)] transition hover:scale-105"
+              aria-label="Hear what Yeti can do"
             >
               <Mic className="h-7 w-7" />
             </button>
+            <p className="mx-auto mt-4 max-w-xs text-sm font-semibold leading-6 text-muted-foreground">
+              {demoText}
+            </p>
           </div>
         </div>
       </section>
@@ -515,18 +552,17 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)]">
-            <h2 className="text-3xl font-black tracking-[-0.04em]">
-              We are fixing the industry everyone quietly hates.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/68">
-              Website help should feel like talking to someone who knows the place, not wrestling
-              a popup that asks for your email before answering anything.
-            </p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
+      <section id="problem" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="max-w-2xl">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">The problem</p>
+          <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+            Chatbots are exhausting. Everyone knows it.
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground">
+            Visitors do not want a popup interview. They want a quick answer that feels easy.
+          </p>
+        </div>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
             {problems.map((problem) => (
               <article key={problem.title} className="rounded-[1.75rem] border border-border/70 bg-white/72 p-6 shadow-sm backdrop-blur">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
@@ -536,8 +572,62 @@ function LandingPage({ onStart }: { onStart: () => void }) {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{problem.text}</p>
               </article>
             ))}
+        </div>
+      </section>
+
+      <section id="voice" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="rounded-[2rem] border border-border/70 bg-white/70 p-7 shadow-sm backdrop-blur">
+          <div className="max-w-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">Why voice wins</p>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+              Talking is faster than typing into chatbot jail.
+            </h2>
+          </div>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {voiceBenefits.map((benefit) => (
+              <article key={benefit.title} className="rounded-[1.5rem] bg-background p-6">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  {benefit.icon}
+                </div>
+                <h3 className="mt-5 text-lg font-black tracking-tight">{benefit.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{benefit.text}</p>
+              </article>
+            ))}
           </div>
         </div>
+      </section>
+
+      <section id="mission" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="grid items-center gap-8 rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">The mission</p>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.05em]">
+              We are fixing the industry everyone quietly hates.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/68">
+              Website help should feel like talking to someone who knows the place, not wrestling
+              a popup that asks for your email before answering anything.
+            </p>
+          </div>
+          <img src={yeti} alt="Yeti mascot" className="mx-auto h-44 w-44 object-contain drop-shadow-2xl" />
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-4xl px-5 py-16 text-center">
+        <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+          Stop making visitors type into tiny chatbot boxes.
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+          Build a voice-first Yeti that learns your site, talks like a guide, and helps people faster.
+        </p>
+        <button
+          type="button"
+          onClick={onStart}
+          className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-[0_22px_55px_-26px_rgba(123,111,230,0.9)] transition hover:bg-primary/90"
+        >
+          Create your Yeti
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </section>
     </main>
   );
