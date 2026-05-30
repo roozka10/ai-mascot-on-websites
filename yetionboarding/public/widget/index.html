@@ -46,6 +46,7 @@
       border-radius: 18px;
       padding: 12px 18px;
       max-width: 240px;
+      overflow-wrap: break-word;
       font-family: 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
       font-weight: 600;
@@ -219,11 +220,19 @@
       display: block;
     }
 
-    /* TALKING — happy bounce */
+    /* TALKING — wider readable answer card */
     .yeti-state-talking .yeti-bubble {
-      opacity: 0 !important;
-      transform: translateY(8px) scale(0.95);
-      pointer-events: none;
+      width: min(360px, calc(100vw - 32px));
+      max-width: min(360px, calc(100vw - 32px));
+      max-height: 128px;
+      overflow-y: auto;
+      padding: 14px 18px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.42;
+      opacity: 1 !important;
+      transform: translateY(0) scale(1);
     }
     .yeti-state-talking .yeti-character {
       animation: yetiBounce 0.45s ease-in-out infinite;
@@ -444,6 +453,7 @@
         console.log('[Yeti] Guide command:', command);
       }
 
+      setBubbleText(cleanText);
       setYetiState('talking');
 
       const utterance = new SpeechSynthesisUtterance(cleanText);
