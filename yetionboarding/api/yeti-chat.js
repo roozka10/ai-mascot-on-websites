@@ -8,14 +8,28 @@ function setCors(res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
+function compactMessages(messages) {
+  const [systemMessage, ...rest] = messages;
+  const compactSystem =
+    systemMessage?.role === "system"
+      ? {
+          ...systemMessage,
+          content: String(systemMessage.content || "").slice(0, 2200),
+        }
+      : systemMessage;
+
+  return [compactSystem, ...rest.slice(-3)].filter(Boolean);
+}
+
 async function callProvider(url, headers, model, messages) {
+  const compactedMessages = compactMessages(messages);
   const guidedMessages = [
     {
       role: "system",
       content:
-        "Style guardrail: answer short, simple, human, warm, fun, and interesting. Prefer one sentence, max two short sentences. When saying a URL, say only the clean domain like example.com; never say https, www, slashes, or long URL paths.",
+        "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths.",
     },
-    ...messages,
+    ...compactedMessages,
   ];
 
   const response = await fetch(url, {
@@ -24,8 +38,8 @@ async function callProvider(url, headers, model, messages) {
     body: JSON.stringify({
       model,
       messages: guidedMessages,
-      max_tokens: 70,
-      temperature: 0.75,
+      max_tokens: 45,
+      temperature: 0.65,
     }),
   });
 

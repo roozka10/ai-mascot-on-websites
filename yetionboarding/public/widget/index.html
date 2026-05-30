@@ -493,7 +493,7 @@
 
     async function askYetiBrain(userText) {
       chatHistory.push({ role: 'user', content: userText });
-      if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
+      if (chatHistory.length > 3) chatHistory = chatHistory.slice(-3);
 
       const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...chatHistory];
 

@@ -121,7 +121,7 @@ type PageScan = {
   internalUrls: string[];
 };
 
-const MAX_SCAN_PAGES = 10;
+const MAX_SCAN_PAGES = 8;
 
 function cleanText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -271,36 +271,36 @@ function buildVoicePrompt({
   scans: PageScan[];
 }) {
   const pageKnowledge = scans
+    .slice(0, 6)
     .map((page) => {
       const facts = [
         page.description,
-        ...page.headings,
-        ...page.snippets,
+        ...page.headings.slice(0, 3),
+        ...page.snippets.slice(0, 3),
         page.ctas.length ? `Actions: ${page.ctas.join(", ")}` : "",
       ].filter(Boolean);
-      return `- ${page.path} (${new URL(page.url).pathname || "/"}): ${facts.join(" | ")}`;
+      return `- ${page.path}: ${facts.join(" | ").slice(0, 360)}`;
     })
     .join("\n");
 
   const ownerNotes = transcript.trim()
-    ? `\nOwner notes: ${transcript.trim().slice(0, 700)}`
+    ? `\nOwner notes: ${transcript.trim().slice(0, 350)}`
     : "";
 
-  return `You are Yeti, the website guide for ${name}. Use ONLY the knowledge below.
+  return `You are Yeti, the fast website guide for ${name}. Use ONLY this compact site knowledge.
 
-Website: ${url}
+Site: ${new URL(url).hostname.replace(/^www\./, "")}
 ${ownerNotes}
 
-Site knowledge:
+Knowledge:
 ${pageKnowledge || "- Website scan found limited text. Ask a concise clarifying question if needed."}
 
 Rules:
-- Answer like a knowledgeable member of ${name}'s team.
-- Be human, fun, warm, and interesting, but still easy to understand.
-- Keep answers short: one simple sentence when possible, max two short sentences.
+- Answer fast, like a human guide: fun, warm, and easy.
+- Keep answers tiny: 1 short sentence, max 2 only if needed.
 - Prefer scanned site knowledge over owner notes.
 - Never invent prices, policies, guarantees, hours, or availability.
-- When mentioning a website, say only the clean domain like example.com. Do not say "https", "www", slashes, or long URL paths.
+- Mention clean domains only, like example.com. No https, www, slashes, or long paths.
 - When directing to a section on the current page, append [scroll:#id] or [scroll:.class].
 - When directing to another page, append [navigate:/page-url].`;
 }
