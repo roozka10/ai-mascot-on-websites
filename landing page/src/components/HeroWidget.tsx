@@ -1,6 +1,6 @@
 export function HeroWidget() {
   return (
-    <div id="hero-demo" className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:translate-x-8 lg:-translate-y-8">
+    <div id="hero-demo" className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:-translate-x-2 lg:-translate-y-12">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 blur-3xl opacity-80"

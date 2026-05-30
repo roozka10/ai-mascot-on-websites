@@ -5,6 +5,8 @@ import yeti from "@/assets/yeti-mascot.png";
 const links = [
   { href: "#how", label: "How it works" },
   { href: "#problem", label: "Problem" },
+  { href: "#takes", label: "Takes" },
+  { href: "#compare", label: "Compare" },
   { href: "#voice", label: "Voice" },
   { href: "#mission", label: "Mission" },
 ];

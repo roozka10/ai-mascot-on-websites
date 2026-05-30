@@ -427,6 +427,19 @@ function LandingPage({ onStart }: { onStart: () => void }) {
     { icon: <Volume2 className="h-5 w-5" />, title: "Spoken help", text: "Yeti talks back like a friendly guide, not a support ticket robot." },
   ];
 
+  const takes = [
+    "Most chatbots are not bad because AI is weak. They are bad because the experience feels like homework.",
+    "The best website assistant should answer first, not ask for an email first.",
+    "Visitors do not want a support portal. They want one clean answer and a reason to trust you.",
+  ];
+
+  const comparisonRows = [
+    { label: "Answer speed", chatbot: 38, yeti: 88 },
+    { label: "Feels human", chatbot: 28, yeti: 82 },
+    { label: "Visitor effort", chatbot: 74, yeti: 22 },
+    { label: "Install friction", chatbot: 62, yeti: 18 },
+  ];
+
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
       <nav className="sticky top-3 z-40 mx-auto flex w-[calc(100%-24px)] max-w-5xl items-center justify-between rounded-full border border-white/70 bg-white/82 px-3 py-2 shadow-[0_18px_58px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl">
@@ -440,6 +453,8 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           {[
             ["How it works", "#how-it-works"],
             ["Problem", "#problem"],
+            ["Takes", "#takes"],
+            ["Compare", "#compare"],
             ["Voice", "#voice"],
             ["Mission", "#mission"],
           ].map(([label, href]) => (
@@ -491,7 +506,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           </div>
         </div>
 
-        <div className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:translate-x-8 lg:-translate-y-8 lg:justify-self-center">
+        <div className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:-translate-x-2 lg:-translate-y-12 lg:justify-self-center">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
           <iframe
             title="Yeti Guide voice demo"
@@ -563,6 +578,61 @@ function LandingPage({ onStart }: { onStart: () => void }) {
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{benefit.text}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="max-w-2xl">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">Controversial takes</p>
+          <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+            The chatbot era made websites feel colder.
+          </h2>
+        </div>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {takes.map((take) => (
+            <article key={take} className="rounded-[1.75rem] border border-border/70 bg-white/72 p-6 shadow-sm backdrop-blur">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <p className="mt-5 text-lg font-black leading-7 tracking-tight">{take}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="compare" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="grid gap-8 rounded-[2rem] border border-border/70 bg-white/72 p-7 shadow-sm backdrop-blur lg:grid-cols-[0.85fr_1.15fr]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">The clean comparison</p>
+            <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+              Old chatbot vs. Yeti Guide.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-muted-foreground">
+              The graph is simple: less effort, faster answers, and a voice that feels like a real guide.
+            </p>
+          </div>
+          <div className="space-y-5 rounded-[1.5rem] bg-background p-5">
+            {comparisonRows.map((row) => (
+              <div key={row.label}>
+                <div className="mb-2 flex items-center justify-between text-sm font-black">
+                  <span>{row.label}</span>
+                  <span className="text-muted-foreground">Chatbot vs Yeti</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-muted-foreground/35" style={{ width: `${row.chatbot}%` }} />
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-secondary/35">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${row.yeti}%` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-4 pt-2 text-xs font-bold text-muted-foreground">
+              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-muted-foreground/35" /> Old chatbot</span>
+              <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary" /> Yeti Guide</span>
+            </div>
           </div>
         </div>
       </section>

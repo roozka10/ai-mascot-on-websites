@@ -76,6 +76,19 @@ const steps = [
   { n: 3, Icon: Code2, title: "Add one script", body: "Paste it in your footer, or ask Cursor, Claude Code, Codex, or any coding agent to do it." },
 ];
 
+const takes = [
+  "Most chatbots are not bad because AI is weak. They are bad because the experience feels like homework.",
+  "The best website assistant should answer first, not ask for an email first.",
+  "Visitors do not want a support portal. They want one clean answer and a reason to trust you.",
+];
+
+const comparisonRows = [
+  { label: "Answer speed", chatbot: 38, yeti: 88 },
+  { label: "Feels human", chatbot: 28, yeti: 82 },
+  { label: "Visitor effort", chatbot: 74, yeti: 22 },
+  { label: "Install friction", chatbot: 62, yeti: 18 },
+];
+
 function Index() {
   const ref = useReveal<HTMLDivElement>();
   return (
@@ -176,7 +189,7 @@ function Index() {
               const tint = tints[i % tints.length];
               return (
                 <div
-                  key={f.title}
+                  key={p.title}
                   className="reveal group rounded-[28px] p-2 card-lift"
                   style={{ background: "var(--color-dark-surface)" }}
                 >
@@ -228,6 +241,65 @@ function Index() {
                 <p className="mt-2 text-muted-foreground leading-relaxed">{f.body}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="takes" className="py-24 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="reveal max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary">Controversial takes</p>
+            <h2 className="mt-4 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
+              The chatbot era made websites feel colder.
+            </h2>
+          </div>
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {takes.map((take) => (
+              <article key={take} className="reveal rounded-[28px] border border-border/70 bg-white/70 p-7 shadow-soft card-lift">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                  <Sparkles size={23} />
+                </div>
+                <p className="mt-6 text-xl font-black leading-relaxed tracking-tight">{take}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="compare" className="py-24 lg:py-32 bg-gradient-to-b from-secondary/20 to-background">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div className="reveal grid gap-10 rounded-[32px] border border-border/70 bg-white/75 p-7 shadow-soft backdrop-blur md:p-10 lg:grid-cols-[0.85fr_1.15fr]">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary">The clean comparison</p>
+              <h2 className="mt-4 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
+                Old chatbot vs. Yeti Guide.
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
+                The graph is simple: less effort, faster answers, and a voice that feels like a real guide.
+              </p>
+            </div>
+            <div className="space-y-6 rounded-[24px] bg-background p-6">
+              {comparisonRows.map((row) => (
+                <div key={row.label}>
+                  <div className="mb-3 flex items-center justify-between text-sm font-black">
+                    <span>{row.label}</span>
+                    <span className="text-muted-foreground">Chatbot vs Yeti</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-muted-foreground/35" style={{ width: `${row.chatbot}%` }} />
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-secondary/35">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${row.yeti}%` }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="flex flex-wrap gap-4 pt-2 text-xs font-bold text-muted-foreground">
+                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-muted-foreground/35" /> Old chatbot</span>
+                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary" /> Yeti Guide</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
