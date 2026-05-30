@@ -397,16 +397,6 @@ function LoginScreen({
 }
 
 function LandingPage({ onStart }: { onStart: () => void }) {
-  const demoStorageKey = "yeti-guide-landing-demo-used";
-  const [demoPlayed, setDemoPlayed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(demoStorageKey) === "true";
-  });
-  const [demoListening, setDemoListening] = useState(false);
-  const [demoText, setDemoText] = useState(
-    "Tap the mic and ask one question about Yeti Guide.",
-  );
-
   const problems = [
     {
       icon: <MessageSquareText className="h-5 w-5" />,
@@ -436,79 +426,6 @@ function LandingPage({ onStart }: { onStart: () => void }) {
     { icon: <Mic className="h-5 w-5" />, title: "Natural questions", text: "No exact keywords. People can ask the way they actually talk." },
     { icon: <Volume2 className="h-5 w-5" />, title: "Spoken help", text: "Yeti talks back like a friendly guide, not a support ticket robot." },
   ];
-
-  const speakDemoReply = (text: string) => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.04;
-      utterance.pitch = 1.08;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  const askDemoAi = async (question: string) => {
-    window.localStorage.setItem(demoStorageKey, "true");
-    setDemoPlayed(true);
-    setDemoText("Thinking...");
-
-    try {
-      const response = await fetch("/api/yeti-demo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
-      });
-      const data = await response.json();
-      const reply =
-        data?.reply ||
-        "Yeti Guide scans your website and gives visitors short spoken answers.";
-      setDemoText("Demo used. Create your Yeti to try it on your own site.");
-      speakDemoReply(reply);
-    } catch {
-      const fallback =
-        "Yeti Guide scans your website and gives visitors short spoken answers.";
-      setDemoText("Demo used. Create your Yeti to try it on your own site.");
-      speakDemoReply(fallback);
-    }
-  };
-
-  const playDemo = () => {
-    if (demoPlayed) {
-      setDemoText("Demo already used on this browser. Create your Yeti to try the real guide.");
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      void askDemoAi("What can Yeti Guide do?");
-      return;
-    }
-
-    setDemoListening(true);
-    setDemoText("Listening... ask anything about Yeti Guide.");
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = "en-US";
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim();
-      if (transcript) {
-        void askDemoAi(transcript);
-      }
-    };
-
-    recognition.onerror = () => {
-      setDemoListening(false);
-      setDemoText("I could not hear that. Tap once and ask about Yeti Guide.");
-    };
-
-    recognition.onend = () => {
-      setDemoListening(false);
-    };
-
-    recognition.start();
-  };
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
@@ -576,22 +493,12 @@ function LandingPage({ onStart }: { onStart: () => void }) {
 
         <div className="relative mx-auto flex w-full max-w-[430px] flex-col items-center justify-center text-center">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
-          <div className="relative">
-            <div className="relative mx-auto mb-5 max-w-[360px] rounded-[1.75rem] border border-border/70 bg-white px-6 py-4 text-center text-lg font-black leading-snug text-foreground shadow-[0_18px_50px_-34px_rgba(15,23,42,0.45)]">
-              {demoText}
-              <span className="absolute -bottom-3 left-1/2 h-6 w-6 -translate-x-1/2 rotate-45 border-b border-r border-border/70 bg-white" />
-            </div>
-            <img src={yeti} alt="Yeti mascot" className="mx-auto h-64 w-64 object-contain drop-shadow-xl sm:h-72 sm:w-72" />
-            <button
-              type="button"
-              onClick={playDemo}
-              disabled={demoListening}
-              className="mx-auto mt-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_46px_-12px_rgba(123,111,230,0.95)] transition hover:scale-105 disabled:cursor-wait disabled:opacity-80"
-              aria-label="Hear what Yeti can do"
-            >
-              {demoListening ? <Loader2 className="h-7 w-7 animate-spin" /> : <Mic className="h-7 w-7" />}
-            </button>
-          </div>
+          <iframe
+            title="Yeti Guide voice demo"
+            src="/widget/index.html?demo=1&embed=1"
+            allow="microphone"
+            className="relative h-[520px] w-full max-w-[430px] border-0 bg-transparent"
+          />
         </div>
       </section>
 

@@ -313,6 +313,8 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
+    const isDemo = params.get('demo') === '1';
+    const demoStorageKey = 'yeti-guide-landing-demo-used';
 
     // ——— DOM refs ———
     const widget = document.getElementById('yeti-widget');
@@ -330,6 +332,10 @@
     const API_BASE_URL = window.location.origin;
 
     const DEFAULT_PROMPT = `You are Yeti, a helpful website guide. Be friendly and concise. Keep replies to one short sentence.`;
+    const DEMO_PROMPT = `You are Yeti Guide's landing page demo.
+Answer ONLY questions about Yeti Guide itself: what it does, why voice is better, setup, website scanning, embed script, and the mission to replace annoying chatbots.
+If asked anything unrelated, politely say you can only explain Yeti Guide.
+Keep it one short, friendly, fun sentence.`;
 
     let SYSTEM_PROMPT = DEFAULT_PROMPT;
     let chatHistory = [];
@@ -337,6 +343,18 @@
     let businessName = '';
 
     async function loadYetiConfig() {
+      if (isDemo) {
+        SYSTEM_PROMPT = DEMO_PROMPT;
+        businessName = 'Yeti Guide';
+        configReady = true;
+        setBubbleText(
+          localStorage.getItem(demoStorageKey) === 'true'
+            ? 'Demo already used here. Create your Yeti to try the real guide!'
+            : 'Ask me one question about Yeti Guide.'
+        );
+        return;
+      }
+
       const yetiId = params.get('id');
       if (!yetiId) {
         configReady = true;
@@ -480,7 +498,11 @@
       utterance.onend = () => {
         isSpeaking = false;
         setYetiState('idle');
-        setBubbleText('Need help finding something? I can guide you.');
+        setBubbleText(
+          isDemo
+            ? 'Demo used here. Create your Yeti to try the real guide!'
+            : 'Need help finding something? I can guide you.'
+        );
       };
 
       utterance.onerror = (e) => {
@@ -496,6 +518,17 @@
 
     // ——— Ask the private Yeti API. Secrets stay on the server. ———
     async function askYetiApi(messages, question) {
+      if (isDemo) {
+        const response = await fetch(`${API_BASE_URL}/api/yeti-demo`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        if (!response.ok) throw new Error(`${response.status}`);
+        const data = await response.json();
+        return data.reply?.trim();
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/yeti-chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -511,6 +544,10 @@
     }
 
     async function askYetiBrain(userText) {
+      if (isDemo) {
+        localStorage.setItem(demoStorageKey, 'true');
+      }
+
       chatHistory.push({ role: 'user', content: userText });
       if (chatHistory.length > 3) chatHistory = chatHistory.slice(-3);
 
@@ -599,6 +636,10 @@
     }
 
     function startListening() {
+      if (isDemo && localStorage.getItem(demoStorageKey) === 'true') {
+        setBubbleText('Demo already used here. Create your Yeti to try the real guide!');
+        return;
+      }
       if (!configReady) {
         setBubbleText('Loading your Yeti setup...');
         return;
