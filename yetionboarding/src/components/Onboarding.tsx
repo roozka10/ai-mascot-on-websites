@@ -461,11 +461,15 @@ function AccountPage({
   const [subscription, setSubscription] = useState<{
     stripe_subscription_id: string | null;
     plan: string | null;
-    billing_interval: string | null;
     status: string | null;
     websites_limit: number | null;
     questions_limit: number | null;
-    current_period_end: string | null;
+  } | null>(null);
+  const [credits, setCredits] = useState<{
+    websites_used: number;
+    websites_limit: number;
+    questions_used: number;
+    questions_limit: number;
   } | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [subscriptionError, setSubscriptionError] = useState("");
@@ -490,7 +494,10 @@ function AccountPage({
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data?.error || "Could not load your plan.");
-        if (active) setSubscription(data.subscription || null);
+        if (active) {
+          setSubscription(data.subscription || null);
+          setCredits(data.credits || null);
+        }
       })
       .catch((error) => {
         if (active) setSubscriptionError(error instanceof Error ? error.message : "Could not load your plan.");
@@ -545,15 +552,12 @@ function AccountPage({
   const planName = subscription?.plan
     ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
     : "No paid plan yet";
-  const status = subscription?.status || "Not active";
-  const billing = subscription?.billing_interval
-    ? `${subscription.billing_interval.charAt(0).toUpperCase()}${subscription.billing_interval.slice(1)} billing`
-    : "Choose a plan to start";
-  const renewsAt = subscription?.current_period_end
-    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
-        new Date(subscription.current_period_end),
-      )
-    : null;
+  const websiteCredits = credits
+    ? `${credits.websites_used}/${credits.websites_limit || "-"}`
+    : "-";
+  const questionCredits = credits
+    ? `${credits.questions_used.toLocaleString()}/${credits.questions_limit ? credits.questions_limit.toLocaleString() : "-"}`
+    : "-";
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-8 pt-24">
@@ -579,11 +583,10 @@ function AccountPage({
               <h2 className="mt-1.5 text-2xl font-black tracking-[-0.05em] text-foreground">
                 {subscriptionLoading ? "Loading..." : planName}
               </h2>
-              <p className="mt-1 text-xs font-bold text-muted-foreground">{subscriptionLoading ? "Checking Stripe..." : billing}</p>
+              <p className="mt-1 text-xs font-bold text-muted-foreground">
+                {subscriptionLoading ? "Checking credits..." : "Plan and monthly credits"}
+              </p>
             </div>
-            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary">
-              {subscriptionLoading ? "Checking" : status.replace(/_/g, " ")}
-            </span>
           </div>
 
           {subscriptionError && (
@@ -600,21 +603,15 @@ function AccountPage({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Website credits</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
-                {subscription?.websites_limit ?? "-"}
+                {websiteCredits}
               </p>
             </div>
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Questions/mo</p>
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm sm:col-span-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">AI question credits this month</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
-                {subscription?.questions_limit?.toLocaleString() ?? "-"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Renews</p>
-              <p className="mt-1.5 text-sm font-black text-foreground">
-                {renewsAt || "-"}
+                {questionCredits}
               </p>
             </div>
           </div>
@@ -887,6 +884,27 @@ export default function Onboarding() {
       let url = site.trim();
       if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
+      if (session?.access_token) {
+        setStatusText("Checking website credits...");
+        const creditResponse = await fetch("/api/account-subscription", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const creditData = await creditResponse.json().catch(() => ({}));
+        if (!creditResponse.ok) {
+          throw new Error(creditData?.error || "Could not check your plan credits.");
+        }
+
+        const websiteCredits = creditData?.credits;
+        const websitesUsed = Number(websiteCredits?.websites_used || 0);
+        const websitesLimit = Number(websiteCredits?.websites_limit || 0);
+        if (!creditData?.subscription || websitesLimit <= 0) {
+          throw new Error("Choose a plan before creating a Yeti website.");
+        }
+        if (websitesUsed >= websitesLimit) {
+          throw new Error(`Your plan includes ${websitesLimit} website${websitesLimit === 1 ? "" : "s"}. Upgrade to add another one.`);
+        }
+      }
+
       const scans = await scanWebsite(url, name, setStatusText);
       if (!scans.length && !transcript.trim()) {
         setError("Yeti could not scan this website. Add a short voice note or try the full https:// URL.");
@@ -926,7 +944,7 @@ export default function Onboarding() {
 
     setLoading(false);
     setStatusText("");
-  }, [name, site, transcript]);
+  }, [name, session?.access_token, site, transcript]);
 
   const copy = async () => {
     await navigator.clipboard.writeText(snippet);

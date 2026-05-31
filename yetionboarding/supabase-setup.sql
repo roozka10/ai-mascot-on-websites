@@ -82,6 +82,20 @@ create index if not exists idx_yeti_subscriptions_customer_id
 create index if not exists idx_yeti_subscriptions_user_email
   on public.yeti_subscriptions (user_email);
 
+-- Monthly AI question credits consumed by widgets.
+create table if not exists public.yeti_usage_monthly (
+  id bigint generated always as identity primary key,
+  user_email text not null,
+  month text not null,
+  questions_used integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_email, month)
+);
+
+create index if not exists idx_yeti_usage_monthly_user_email
+  on public.yeti_usage_monthly (user_email);
+
 -- -----------------------------------------------------------------------------
 -- 3. Row Level Security (RLS)
 -- -----------------------------------------------------------------------------
@@ -96,6 +110,7 @@ drop policy if exists "Users update own yeti configs" on public.yeti_configs;
 drop policy if exists "Users delete own yeti configs" on public.yeti_configs;
 drop policy if exists "Service can manage Yeti FAQ answers" on public.yeti_faq_answers;
 drop policy if exists "Service can manage Yeti subscriptions" on public.yeti_subscriptions;
+drop policy if exists "Service can manage Yeti usage" on public.yeti_usage_monthly;
 
 -- Widget + embed: read any config by yeti_id (anon key)
 create policy "Public read yeti configs"
@@ -137,6 +152,15 @@ alter table public.yeti_subscriptions enable row level security;
 
 create policy "Service can manage Yeti subscriptions"
   on public.yeti_subscriptions
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+alter table public.yeti_usage_monthly enable row level security;
+
+create policy "Service can manage Yeti usage"
+  on public.yeti_usage_monthly
   for all
   to service_role
   using (true)
@@ -277,6 +301,38 @@ begin
 end;
 $$;
 
+create or replace function public.increment_yeti_question_usage(
+  p_user_email text
+)
+returns table (
+  questions_used integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_month text := to_char(now(), 'YYYY-MM');
+begin
+  return query
+  insert into public.yeti_usage_monthly (
+    user_email,
+    month,
+    questions_used
+  )
+  values (
+    p_user_email,
+    current_month,
+    1
+  )
+  on conflict (user_email, month)
+  do update set
+    questions_used = public.yeti_usage_monthly.questions_used + 1,
+    updated_at = now()
+  returning public.yeti_usage_monthly.questions_used;
+end;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 5. API permissions (anon + authenticated clients)
 -- -----------------------------------------------------------------------------
@@ -284,8 +340,10 @@ grant usage on schema public to anon, authenticated;
 grant select on public.yeti_configs to anon, authenticated;
 grant insert, update, delete on public.yeti_configs to authenticated;
 grant all on public.yeti_subscriptions to service_role;
+grant all on public.yeti_usage_monthly to service_role;
 grant execute on function public.match_yeti_faq(text, text, real) to service_role;
 grant execute on function public.upsert_yeti_faq(text, text, text) to service_role;
+grant execute on function public.increment_yeti_question_usage(text) to service_role;
 
 -- -----------------------------------------------------------------------------
 -- Done. In Supabase UI also confirm:

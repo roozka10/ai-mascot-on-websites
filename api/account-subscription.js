@@ -25,7 +25,7 @@ async function getSubscription(email) {
   const response = await fetch(
     `${supabaseUrl}/rest/v1/yeti_subscriptions?user_email=eq.${encodeURIComponent(
       email,
-    )}&select=stripe_subscription_id,plan,billing_interval,status,websites_limit,questions_limit,current_period_end,updated_at&order=updated_at.desc&limit=1`,
+    )}&select=stripe_subscription_id,plan,status,websites_limit,questions_limit,updated_at&order=updated_at.desc&limit=1`,
     {
       headers: {
         apikey: serviceKey,
@@ -40,6 +40,51 @@ async function getSubscription(email) {
 
   const rows = await response.json();
   return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function getWebsiteUsage(email) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey || !email) return 0;
+
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/yeti_configs?user_email=eq.${encodeURIComponent(email)}&select=id`,
+    {
+      method: "HEAD",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Prefer: "count=exact",
+      },
+    },
+  );
+
+  if (!response.ok) return 0;
+  const range = response.headers.get("content-range") || "";
+  return Number(range.split("/")[1] || 0);
+}
+
+async function getQuestionUsage(email) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey || !email) return 0;
+
+  const month = new Date().toISOString().slice(0, 7);
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/yeti_usage_monthly?user_email=eq.${encodeURIComponent(
+      email,
+    )}&month=eq.${month}&select=questions_used&limit=1`,
+    {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+      },
+    },
+  );
+
+  if (!response.ok) return 0;
+  const rows = await response.json();
+  return Array.isArray(rows) ? Number(rows[0]?.questions_used || 0) : 0;
 }
 
 export default async function handler(req, res) {
@@ -59,7 +104,21 @@ export default async function handler(req, res) {
     }
 
     const subscription = await getSubscription(user.email);
-    res.status(200).json({ email: user.email, subscription });
+    const [websitesUsed, questionsUsed] = await Promise.all([
+      getWebsiteUsage(user.email),
+      getQuestionUsage(user.email),
+    ]);
+
+    res.status(200).json({
+      email: user.email,
+      subscription,
+      credits: {
+        websites_used: websitesUsed,
+        websites_limit: subscription?.websites_limit || 0,
+        questions_used: questionsUsed,
+        questions_limit: subscription?.questions_limit || 0,
+      },
+    });
   } catch (error) {
     console.error("[Account] Subscription lookup failed", error);
     res.status(500).json({ error: "Could not load subscription" });
