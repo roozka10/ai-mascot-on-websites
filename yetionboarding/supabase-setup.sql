@@ -112,6 +112,25 @@ create table if not exists public.yeti_free_credit_spins (
 create index if not exists idx_yeti_free_credit_spins_user_email
   on public.yeti_free_credit_spins (user_email);
 
+-- Product feedback and feature requests submitted from the app.
+create table if not exists public.yeti_feature_requests (
+  id bigint generated always as identity primary key,
+  account_email text,
+  contact_email text,
+  message text not null,
+  input_mode text,
+  page_url text,
+  status text not null default 'new',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_yeti_feature_requests_created_at
+  on public.yeti_feature_requests (created_at desc);
+
+create index if not exists idx_yeti_feature_requests_account_email
+  on public.yeti_feature_requests (account_email);
+
 -- -----------------------------------------------------------------------------
 -- 3. Row Level Security (RLS)
 -- -----------------------------------------------------------------------------
@@ -128,6 +147,7 @@ drop policy if exists "Service can manage Yeti FAQ answers" on public.yeti_faq_a
 drop policy if exists "Service can manage Yeti subscriptions" on public.yeti_subscriptions;
 drop policy if exists "Service can manage Yeti usage" on public.yeti_usage_monthly;
 drop policy if exists "Service can manage Yeti free spins" on public.yeti_free_credit_spins;
+drop policy if exists "Service can manage Yeti feature requests" on public.yeti_feature_requests;
 
 -- Widget + embed: read any config by yeti_id (anon key)
 create policy "Public read yeti configs"
@@ -187,6 +207,15 @@ alter table public.yeti_free_credit_spins enable row level security;
 
 create policy "Service can manage Yeti free spins"
   on public.yeti_free_credit_spins
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+alter table public.yeti_feature_requests enable row level security;
+
+create policy "Service can manage Yeti feature requests"
+  on public.yeti_feature_requests
   for all
   to service_role
   using (true)
@@ -425,6 +454,7 @@ grant select on public.yeti_configs to anon, authenticated;
 grant insert, update, delete on public.yeti_configs to authenticated;
 grant all on public.yeti_subscriptions to service_role;
 grant all on public.yeti_usage_monthly to service_role;
+grant all on public.yeti_feature_requests to service_role;
 grant execute on function public.match_yeti_faq(text, text, real) to service_role;
 grant execute on function public.upsert_yeti_faq(text, text, text) to service_role;
 grant execute on function public.increment_yeti_question_usage(text) to service_role;
