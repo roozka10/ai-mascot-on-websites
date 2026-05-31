@@ -31,6 +31,14 @@ const TOTAL = 3;
 
 const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
 
+const BUSINESS_BRIEF_QUESTIONS = [
+  "What do you sell, who is it for, and what makes it different?",
+  "What questions do customers ask before they buy?",
+  "What are your prices, packages, trials, guarantees, or refund rules?",
+  "What should Yeti say about shipping, booking, hours, support, or contact info?",
+  "What tone should Yeti use, and what should it never promise?",
+];
+
 const ACTIVE_PLAN_STATUSES = new Set(["active", "trialing", "past_due"]);
 
 async function fetchSetupCredits(accessToken: string) {
@@ -331,7 +339,7 @@ function buildVoicePrompt({
     .join("\n");
 
   const ownerNotes = transcript.trim()
-    ? `\nOwner notes: ${transcript.trim().slice(0, 350)}`
+    ? `\nOwner notes: ${transcript.trim().slice(0, 1200)}`
     : "";
 
   return `You are Yeti, the fast website guide for ${name}. Use ONLY this compact site knowledge.
@@ -1182,11 +1190,45 @@ export default function Onboarding() {
       <>
       {nav}
       <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-28">
-        <div className="w-full max-w-[640px] mx-auto">
+        <div className="w-full max-w-[760px] mx-auto">
           <StepShell step={1}>
             <Stepper step={step} />
 
             <div className="flex min-h-[calc(100dvh-96px)] flex-col items-center justify-center text-center">
+              <div className="mb-6 w-full rounded-[1.75rem] border border-border/60 bg-white/85 p-4 text-left shadow-[0_18px_58px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-5">
+                <div className="flex flex-col gap-2 text-center sm:text-left">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                    Teach Yeti in one recording
+                  </p>
+                  <h1 className="text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
+                    Answer these 5 quick questions
+                  </h1>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Tap the mic, talk naturally, and answer as many as you can. These are the details customers usually ask support teams first.
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {BUSINESS_BRIEF_QUESTIONS.map((question, index) => (
+                    <div
+                      key={question}
+                      className={`rounded-2xl border border-border/60 bg-white px-3 py-3 shadow-sm ${
+                        index === 0 ? "sm:col-span-2" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">
+                          {index + 1}
+                        </span>
+                        <p className="text-sm font-semibold leading-5 text-foreground">
+                          {question}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="relative w-full max-w-[440px] rounded-[1.75rem] border-[3px] border-foreground/90 bg-white px-5 py-5 shadow-[0_18px_58px_-36px_rgba(15,23,42,0.45)] sm:px-8 sm:py-6">
                 <textarea
                   value={liveTranscript}
@@ -1199,13 +1241,13 @@ export default function Onboarding() {
                   placeholder={
                     voiceStarted
                       ? ""
-                      : "Optional: add tone, offers, prices, policies, or anything the website may not say clearly."
+                      : "Tap the mic and answer the questions above, or type your answers here."
                   }
                   className="w-full resize-none bg-transparent text-center text-xl font-bold leading-7 tracking-[-0.035em] text-foreground placeholder:text-foreground outline-none sm:text-2xl sm:leading-8"
                 />
                 {!voiceStarted && !transcript && !interimTranscript && (
                   <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                    Yeti will scan your website first. Voice notes are optional.
+                    Yeti scans your website too, but these answers make it much smarter.
                   </p>
                 )}
                 <div className="absolute -bottom-[15px] left-1/2 h-8 w-8 -translate-x-1/2 rotate-45 border-b-[3px] border-r-[3px] border-foreground/90 bg-white" />
@@ -1236,10 +1278,10 @@ export default function Onboarding() {
               </button>
 
               <p className="mt-3 text-xs font-medium text-foreground/80">
-                {listening ? "Listening... speak naturally" : "Tap the mic to start"}
+                {listening ? "Listening... answer the 5 questions out loud" : "Tap the mic to answer out loud"}
               </p>
               <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-                Yeti will crawl key pages and keep the saved AI prompt short. Use the mic only for extra details.
+                You can pause and tap again if you need more time. Yeti combines this with the website scan.
               </p>
 
               {!speechSupported && (
