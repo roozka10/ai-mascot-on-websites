@@ -1,11 +1,14 @@
 async function getSupabaseUser(accessToken) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !anonKey || !accessToken) return null;
+  const apiKey =
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !apiKey || !accessToken) return null;
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: {
-      apikey: anonKey,
+      apikey: apiKey,
       Authorization: `Bearer ${accessToken}`,
     },
   });

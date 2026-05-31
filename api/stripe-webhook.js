@@ -56,10 +56,14 @@ function subscriptionRecordFromObject(object) {
   const periodEnd = object.current_period_end
     ? new Date(object.current_period_end * 1000).toISOString()
     : null;
+  const subscriptionId =
+    object.object === "checkout.session"
+      ? object.subscription
+      : object.id;
 
   return {
     stripe_customer_id: typeof object.customer === "string" ? object.customer : object.customer?.id,
-    stripe_subscription_id: object.id || object.subscription,
+    stripe_subscription_id: subscriptionId,
     stripe_checkout_session_id: object.object === "checkout.session" ? object.id : null,
     user_email: object.customer_details?.email || object.customer_email || null,
     plan: metadata.plan || null,
@@ -75,6 +79,9 @@ function subscriptionRecordFromObject(object) {
 async function upsertSubscription(record) {
   const { url, key } = getSupabaseConfig();
   if (!url || !key || !record.stripe_subscription_id) return;
+  const cleanRecord = Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== null && value !== undefined),
+  );
 
   const response = await fetch(
     `${url}/rest/v1/yeti_subscriptions?on_conflict=stripe_subscription_id`,
@@ -86,7 +93,7 @@ async function upsertSubscription(record) {
         Authorization: `Bearer ${key}`,
         Prefer: "resolution=merge-duplicates",
       },
-      body: JSON.stringify(record),
+      body: JSON.stringify(cleanRecord),
     },
   );
 

@@ -103,7 +103,7 @@ export default async function handler(req, res) {
   try {
     const session = await createStripeCheckoutSession({
       mode: "subscription",
-      payment_method_collection: "if_required",
+      payment_method_collection: "always",
       allow_promotion_codes: true,
       customer_email: email || undefined,
       line_items: [
