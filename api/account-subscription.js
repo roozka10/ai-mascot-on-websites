@@ -25,7 +25,7 @@ async function getSubscription(email) {
   const response = await fetch(
     `${supabaseUrl}/rest/v1/yeti_subscriptions?user_email=eq.${encodeURIComponent(
       email,
-    )}&select=plan,billing_interval,status,websites_limit,questions_limit,current_period_end,updated_at&order=updated_at.desc&limit=1`,
+    )}&select=stripe_subscription_id,plan,billing_interval,status,websites_limit,questions_limit,current_period_end,updated_at&order=updated_at.desc&limit=1`,
     {
       headers: {
         apikey: serviceKey,

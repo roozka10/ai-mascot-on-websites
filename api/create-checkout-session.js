@@ -121,7 +121,7 @@ export default async function handler(req, res) {
         },
       ],
       subscription_data: {
-        trial_period_days: 7,
+        trial_period_days: 3,
         metadata: {
           app: "yeti-guide",
           plan: planId,

@@ -221,11 +221,11 @@ export function PricingSection({ standalone = false }: PricingSectionProps) {
                   disabled={loadingPlan !== null}
                   className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
                 >
-                  {loadingPlan === plan.id ? "Opening Stripe..." : "Start 7-day free trial"}
+                  {loadingPlan === plan.id ? "Opening Stripe..." : "Start 3-day free trial"}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
                 <p className="mt-2.5 text-center text-[11px] font-semibold text-muted-foreground">
-                  $0 today. Card required for auto-renewal after trial.
+                  $0 today. Card required for auto-renewal after 3 days.
                 </p>
               </article>
             );

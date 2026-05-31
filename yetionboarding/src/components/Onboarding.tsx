@@ -459,6 +459,7 @@ function AccountPage({
   onLogout: () => void;
 }) {
   const [subscription, setSubscription] = useState<{
+    stripe_subscription_id: string | null;
     plan: string | null;
     billing_interval: string | null;
     status: string | null;
@@ -468,6 +469,10 @@ function AccountPage({
   } | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [subscriptionError, setSubscriptionError] = useState("");
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState("");
 
   useEffect(() => {
     if (!accessToken) {
@@ -499,6 +504,44 @@ function AccountPage({
     };
   }, [accessToken]);
 
+  async function cancelSubscription() {
+    if (!accessToken || !subscription?.stripe_subscription_id) return;
+
+    const reason = cancelReason.trim();
+    if (reason.length < 3) {
+      setCancelMessage("Please tell us why before cancelling.");
+      return;
+    }
+
+    setCancelLoading(true);
+    setCancelMessage("");
+
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          subscriptionId: subscription.stripe_subscription_id,
+          reason,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Could not cancel your plan.");
+
+      setSubscription((current) => current ? { ...current, status: "canceling" } : current);
+      setShowCancel(false);
+      setCancelReason("");
+      setCancelMessage("Your plan will cancel at the end of the current period.");
+    } catch (error) {
+      setCancelMessage(error instanceof Error ? error.message : "Could not cancel your plan.");
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
   const planName = subscription?.plan
     ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
     : "No paid plan yet";
@@ -513,76 +556,139 @@ function AccountPage({
     : null;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
-      <section className="w-full max-w-3xl rounded-[2rem] border border-border/60 bg-white p-7 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.48)]">
-        <Mascot size={76} />
-        <p className="mt-6 text-center text-xs font-black uppercase tracking-[0.2em] text-primary">
+    <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-8 pt-24">
+      <section className="w-full max-w-xl rounded-[1.75rem] border border-border/60 bg-white p-5 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] sm:p-6">
+        <Mascot size={58} />
+        <p className="mt-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-primary">
           Account
         </p>
-        <h1 className="mt-3 text-center text-3xl font-black tracking-[-0.05em] text-foreground">
+        <h1 className="mt-2 text-center text-2xl font-black tracking-[-0.05em] text-foreground">
           Your Yeti workspace
         </h1>
-        <p className="mt-3 text-center text-sm leading-6 text-muted-foreground">
+        <p className="mt-2 text-center text-xs leading-5 text-muted-foreground">
           Signed in as
         </p>
-        <p className="mx-auto mt-2 max-w-md rounded-2xl bg-muted px-4 py-3 text-center text-sm font-bold text-foreground">
+        <p className="mx-auto mt-2 max-w-sm rounded-2xl bg-muted px-3 py-2 text-center text-xs font-bold text-foreground">
           {email || "Unknown email"}
         </p>
 
-        <div className="mt-7 rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Current plan</p>
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-foreground">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
+              <h2 className="mt-1.5 text-2xl font-black tracking-[-0.05em] text-foreground">
                 {subscriptionLoading ? "Loading..." : planName}
               </h2>
-              <p className="mt-1 text-sm font-bold text-muted-foreground">{subscriptionLoading ? "Checking Stripe..." : billing}</p>
+              <p className="mt-1 text-xs font-bold text-muted-foreground">{subscriptionLoading ? "Checking Stripe..." : billing}</p>
             </div>
-            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-primary">
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary">
               {subscriptionLoading ? "Checking" : status.replace(/_/g, " ")}
             </span>
           </div>
 
           {subscriptionError && (
-            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+            <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
               {subscriptionError}
             </p>
           )}
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
-              <p className="mt-2 text-2xl font-black text-foreground">
+          {cancelMessage && (
+            <p className="mt-3 rounded-2xl border border-primary/20 bg-primary/8 px-3 py-2 text-xs font-bold text-primary">
+              {cancelMessage}
+            </p>
+          )}
+
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
+              <p className="mt-1.5 text-xl font-black text-foreground">
                 {subscription?.websites_limit ?? "-"}
               </p>
             </div>
-            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Questions/mo</p>
-              <p className="mt-2 text-2xl font-black text-foreground">
+            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Questions/mo</p>
+              <p className="mt-1.5 text-xl font-black text-foreground">
                 {subscription?.questions_limit?.toLocaleString() ?? "-"}
               </p>
             </div>
-            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Renews</p>
-              <p className="mt-2 text-lg font-black text-foreground">
+            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Renews</p>
+              <p className="mt-1.5 text-sm font-black text-foreground">
                 {renewsAt || "-"}
               </p>
             </div>
           </div>
 
-          <a
-            href="/pricing"
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
-          >
-            View pricing and upgrade
-            <ArrowRight className="h-4 w-4" />
-          </a>
+          {showCancel && (
+            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/70 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black text-foreground">Before you cancel</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Stay and we can give you 20% off your next 2 months. Tell us what went wrong so we can fix it.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCancel(false)}
+                  className="rounded-full p-1 text-muted-foreground transition hover:bg-white hover:text-foreground"
+                  aria-label="Close cancellation"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <textarea
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                placeholder="Why do you want to cancel?"
+                className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-border bg-white px-3 py-2 text-xs outline-none focus:border-primary"
+              />
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancel(false);
+                    setCancelMessage("Discount request saved. We will help you keep Yeti cheaper.");
+                  }}
+                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
+                >
+                  Keep Yeti with discount
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelSubscription}
+                  disabled={cancelLoading}
+                  className="inline-flex items-center justify-center rounded-full border border-red-200 bg-white px-4 py-2.5 text-xs font-black text-red-600 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {cancelLoading ? "Cancelling..." : "Cancel anyway"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <a
+              href="/pricing"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
+            >
+              View pricing
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowCancel(true)}
+              disabled={!subscription?.stripe_subscription_id || subscription?.status === "canceling"}
+              className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel plan
+            </button>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={onLogout}
-          className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:bg-foreground/90"
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-4 py-2.5 text-xs font-bold text-background transition hover:bg-foreground/90"
         >
           <LogOut className="h-4 w-4" />
           Log out
