@@ -126,6 +126,26 @@ async function stripeRequest(path, params) {
   return data;
 }
 
+async function resolveProductName(subscription) {
+  const price = subscription?.items?.data?.[0]?.price;
+  if (!price) return "";
+
+  if (typeof price.product === "object" && price.product?.name) {
+    return price.product.name;
+  }
+  if (price.nickname) return price.nickname;
+
+  const productId = typeof price.product === "string" ? price.product : null;
+  if (!productId) return "";
+
+  try {
+    const product = await stripeRequest(`/products/${productId}`);
+    return product.name || "";
+  } catch {
+    return "";
+  }
+}
+
 async function getSubscriptionFromStripe(email) {
   if (!process.env.STRIPE_SECRET_KEY) return null;
 
@@ -147,7 +167,6 @@ async function getSubscriptionFromStripe(email) {
         customer: customer.id,
         status: "all",
         limit: "100",
-        "expand[]": "data.items.data.price.product",
       });
 
       const subscription =
@@ -165,10 +184,7 @@ async function getSubscriptionFromStripe(email) {
     if (!matchedSubscription?.id || !matchedCustomer?.id) return null;
 
     const metadataPlan = matchedSubscription.metadata?.plan;
-    const productName =
-      matchedSubscription.items?.data?.[0]?.price?.product?.name ||
-      matchedSubscription.items?.data?.[0]?.price?.nickname ||
-      "";
+    const productName = await resolveProductName(matchedSubscription);
     const plan = metadataPlan || planFromLabel(productName) || "starter";
 
     const record = buildSubscriptionRecord({
