@@ -219,43 +219,69 @@ function LuckySpinPopup({
 }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)]">
-        <Mascot size={58} />
-        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+      <style>{`
+        @keyframes yeti-run-track {
+          from { transform: translateX(120%); }
+          to { transform: translateX(-140%); }
+        }
+        @keyframes yeti-jump {
+          0%, 100% { transform: translateY(0); }
+          45% { transform: translateY(-44px); }
+        }
+        @keyframes yeti-ground {
+          from { background-position-x: 0; }
+          to { background-position-x: -48px; }
+        }
+      `}</style>
+      <div className="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)] sm:p-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
           Lucky Yeti Spin
         </p>
-        <h2 className="mt-2 text-xl font-black tracking-[-0.05em] text-foreground">
+        <h2 className="mx-auto mt-2 max-w-md text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
           We do not fake luck. Everybody gets different stuff.
         </h2>
-        <p className="mt-2 text-xs font-bold leading-5 text-muted-foreground">
+        <p className="mx-auto mt-2 max-w-md text-xs font-bold leading-5 text-muted-foreground">
           Spin once. If Yeti blesses you, you get free website slots and AI questions. If not, blame the mountain.
         </p>
 
-        <div className="relative mx-auto mt-5 grid h-52 w-52 place-items-center">
+        <div className="relative mx-auto mt-5 h-60 overflow-hidden rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#111827_0%,#20113f_54%,#f8f7ff_54%,#ffffff_100%)] shadow-inner">
+          <div className="absolute left-5 top-5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+            real odds
+          </div>
+          <div className="absolute right-5 top-5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+            one spin
+          </div>
+          <div className="absolute bottom-[72px] left-0 right-0 h-[3px] bg-foreground/80" />
           <div
-            className={`absolute inset-0 rounded-full border-[10px] border-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.9)] transition-transform duration-1000 ${
-              spinning ? "animate-spin" : ""
-            }`}
-            style={{
-              background:
-                "conic-gradient(from 0deg,#7c3aed 0 45deg,#f8fafc 45deg 90deg,#111827 90deg 135deg,#ede9fe 135deg 180deg,#7c3aed 180deg 225deg,#f8fafc 225deg 270deg,#111827 270deg 315deg,#ede9fe 315deg 360deg)",
-            }}
+            className="absolute bottom-[74px] left-12 z-10"
+            style={{ animation: spinning ? "yeti-jump 0.72s ease-in-out infinite" : undefined }}
           >
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((dot) => (
-              <span
-                key={dot}
-                className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-white shadow"
-                style={{
-                  transform: `rotate(${dot * 45}deg) translateY(-88px)`,
-                  transformOrigin: "0 0",
-                }}
-              />
-            ))}
+            <img src={yeti} alt="Yeti mascot" className="h-20 w-20 object-contain drop-shadow-xl" />
           </div>
-          <div className="absolute -top-1 h-0 w-0 border-x-[12px] border-t-[22px] border-x-transparent border-t-foreground" />
-          <div className="relative grid h-24 w-24 place-items-center rounded-full border border-white/70 bg-white shadow-xl">
-            <img src={yeti} alt="Yeti mascot" className="h-16 w-16 object-contain" />
-          </div>
+          {[0, 1, 2].map((item) => (
+            <span
+              key={item}
+              className="absolute bottom-[75px] h-10 w-7 rounded-md bg-primary shadow-[0_10px_24px_-12px_rgba(124,58,237,0.9)]"
+              style={{
+                right: `${28 + item * 150}px`,
+                animation: spinning
+                  ? `yeti-run-track 1.35s linear ${item * 0.28}s infinite`
+                  : undefined,
+              }}
+            />
+          ))}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-[72px] opacity-70"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg,rgba(124,58,237,0.16) 0 24px,transparent 24px 48px)",
+              backgroundSize: "48px 100%",
+              animation: spinning ? "yeti-ground 0.65s linear infinite" : undefined,
+            }}
+          />
+          <p className="absolute bottom-5 left-0 right-0 text-xs font-black uppercase tracking-[0.2em] text-foreground/70">
+            {spinning ? "Yeti is jumping for your credits..." : "Press spin to play"}
+          </p>
         </div>
 
         {reward ? (
@@ -962,10 +988,13 @@ export default function Onboarding() {
     setError("");
 
     try {
-      const response = await fetch("/api/free-credits-spin", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+      const [response] = await Promise.all([
+        fetch("/api/free-credits-spin", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }),
+        new Promise((resolve) => setTimeout(resolve, 1800)),
+      ]);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Could not spin for credits.");
       setSpinReward(data.reward || null);
@@ -1538,15 +1567,13 @@ export default function Onboarding() {
           <StepShell step={1}>
             <Stepper step={step} />
 
-            <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-center text-center">
-              <div className="w-full rounded-full border border-border/60 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
-                  {currentBriefQuestionIndex + 1}/{briefQuestions.length}
-                </p>
-                <h1 className="mt-1 truncate text-base font-black tracking-[-0.03em] text-foreground sm:text-lg">
-                  {currentBriefQuestion}
-                </h1>
-              </div>
+            <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-start pt-3 text-center">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+                {currentBriefQuestionIndex + 1}/{briefQuestions.length}
+              </p>
+              <h1 className="mt-2 w-full max-w-[680px] truncate text-xl font-black tracking-[-0.04em] text-foreground sm:text-2xl">
+                {currentBriefQuestion}
+              </h1>
 
               <div className="mt-4 flex items-center justify-center gap-1.5">
                 {briefQuestions.map((question, index) => (
@@ -1566,7 +1593,7 @@ export default function Onboarding() {
                 ))}
               </div>
 
-              <div className="relative mt-7 flex items-center justify-center">
+              <div className="relative mt-8 flex items-center justify-center">
                 <div className="absolute h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
                 <img
                   src={yeti}
