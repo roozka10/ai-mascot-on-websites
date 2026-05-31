@@ -176,8 +176,11 @@ function QuestionLoadingGame() {
         Wait...
       </p>
       <h2 className="mt-2 max-w-sm text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
-        Yeti is reading your website
+        Reading your website
       </h2>
+      <p className="mt-2 max-w-sm text-sm font-bold leading-6 text-muted-foreground">
+        Yeti is making questions to ask you.
+      </p>
       <img
         src={mascotHandsUp}
         alt="Yeti mascot waiting"
@@ -1151,10 +1154,7 @@ export default function Onboarding() {
         return;
       }
       setStatusText("Writing questions for your website...");
-      const [questions] = await Promise.all([
-        fetchPersonalizedQuestions(name.trim(), site.trim()),
-        new Promise((resolve) => setTimeout(resolve, 5000)),
-      ]);
+      const questions = await fetchPersonalizedQuestions(name.trim(), site.trim());
       setBriefQuestions(questions);
       setBriefAnswers(questions.map(() => ""));
       setCurrentBriefQuestionIndex(0);
