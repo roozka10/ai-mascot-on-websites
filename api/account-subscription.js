@@ -274,6 +274,61 @@ async function getQuestionUsage(email) {
   }
 }
 
+async function getFreeCredits(email) {
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key || !email) {
+    return {
+      has_spun: false,
+      websites_granted: 0,
+      questions_granted: 0,
+      questions_available_this_month: 0,
+      reward_label: null,
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${url}/rest/v1/yeti_free_credit_spins?user_email=eq.${encodeURIComponent(email)}&select=month,websites_granted,questions_granted,reward_label,created_at&limit=1`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      return {
+        has_spun: false,
+        websites_granted: 0,
+        questions_granted: 0,
+        questions_available_this_month: 0,
+        reward_label: null,
+      };
+    }
+
+    const rows = await response.json();
+    const spin = Array.isArray(rows) ? rows[0] : null;
+    const isCurrentMonth = spin?.month === new Date().toISOString().slice(0, 7);
+    return {
+      has_spun: Boolean(spin),
+      websites_granted: Number(spin?.websites_granted || 0),
+      questions_granted: Number(spin?.questions_granted || 0),
+      questions_available_this_month: isCurrentMonth ? Number(spin?.questions_granted || 0) : 0,
+      reward_label: spin?.reward_label || null,
+      month: spin?.month || null,
+    };
+  } catch {
+    return {
+      has_spun: false,
+      websites_granted: 0,
+      questions_granted: 0,
+      questions_available_this_month: 0,
+      reward_label: null,
+    };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.status(405).json({ error: "Method not allowed" });
@@ -292,19 +347,27 @@ export default async function handler(req, res) {
 
     const subscription = await getSubscription(user.email);
     const hasActivePlan = isActiveSubscription(subscription);
-    const [websitesUsed, questionsUsed] = await Promise.all([
+    const [websitesUsed, questionsUsed, freeCredits] = await Promise.all([
       getWebsiteUsage(user.email),
       getQuestionUsage(user.email),
+      getFreeCredits(user.email),
     ]);
+    const websiteLimit =
+      (hasActivePlan ? Number(subscription?.websites_limit || 0) : 0) +
+      freeCredits.websites_granted;
+    const questionLimit =
+      (hasActivePlan ? Number(subscription?.questions_limit || 0) : 0) +
+      freeCredits.questions_available_this_month;
 
     res.status(200).json({
       email: user.email,
       subscription,
+      free_credits: freeCredits,
       credits: {
-        websites_used: hasActivePlan ? websitesUsed : 0,
-        websites_limit: hasActivePlan ? subscription?.websites_limit || 0 : 0,
-        questions_used: hasActivePlan ? questionsUsed : 0,
-        questions_limit: hasActivePlan ? subscription?.questions_limit || 0 : 0,
+        websites_used: websiteLimit > 0 ? websitesUsed : 0,
+        websites_limit: websiteLimit,
+        questions_used: questionLimit > 0 ? questionsUsed : 0,
+        questions_limit: questionLimit,
       },
     });
   } catch {

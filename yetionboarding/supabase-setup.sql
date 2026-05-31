@@ -96,6 +96,22 @@ create table if not exists public.yeti_usage_monthly (
 create index if not exists idx_yeti_usage_monthly_user_email
   on public.yeti_usage_monthly (user_email);
 
+-- One-time lucky spin credits for new accounts. Websites are lifetime bonus
+-- slots; AI question credits apply only during the month they were won.
+create table if not exists public.yeti_free_credit_spins (
+  id bigint generated always as identity primary key,
+  user_email text unique not null,
+  month text not null,
+  websites_granted integer not null default 0,
+  questions_granted integer not null default 0,
+  reward_label text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_yeti_free_credit_spins_user_email
+  on public.yeti_free_credit_spins (user_email);
+
 -- -----------------------------------------------------------------------------
 -- 3. Row Level Security (RLS)
 -- -----------------------------------------------------------------------------
@@ -111,6 +127,7 @@ drop policy if exists "Users delete own yeti configs" on public.yeti_configs;
 drop policy if exists "Service can manage Yeti FAQ answers" on public.yeti_faq_answers;
 drop policy if exists "Service can manage Yeti subscriptions" on public.yeti_subscriptions;
 drop policy if exists "Service can manage Yeti usage" on public.yeti_usage_monthly;
+drop policy if exists "Service can manage Yeti free spins" on public.yeti_free_credit_spins;
 
 -- Widget + embed: read any config by yeti_id (anon key)
 create policy "Public read yeti configs"
@@ -161,6 +178,15 @@ alter table public.yeti_usage_monthly enable row level security;
 
 create policy "Service can manage Yeti usage"
   on public.yeti_usage_monthly
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+alter table public.yeti_free_credit_spins enable row level security;
+
+create policy "Service can manage Yeti free spins"
+  on public.yeti_free_credit_spins
   for all
   to service_role
   using (true)

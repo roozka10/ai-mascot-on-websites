@@ -94,6 +94,28 @@ async function getSubscriptionForEmail(email) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
+async function getFreeQuestionCredits(email) {
+  const { url, key } = getSupabaseConfig();
+  if (!url || !key || !email) return 0;
+
+  const response = await fetch(
+    `${url}/rest/v1/yeti_free_credit_spins?user_email=eq.${encodeURIComponent(email)}&select=month,questions_granted&limit=1`,
+    {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    },
+  );
+
+  if (!response.ok) return 0;
+  const rows = await response.json();
+  const spin = Array.isArray(rows) ? rows[0] : null;
+  return spin?.month === new Date().toISOString().slice(0, 7)
+    ? Number(spin?.questions_granted || 0)
+    : 0;
+}
+
 async function getQuestionUsage(email) {
   const { url, key } = getSupabaseConfig();
   if (!url || !key || !email) return 0;
@@ -137,11 +159,12 @@ async function enforceQuestionCredits(yetiId) {
 
   const subscription = await getSubscriptionForEmail(ownerEmail);
   const activeStatuses = new Set(["active", "trialing"]);
-  if (!subscription || !activeStatuses.has(subscription.status)) {
-    return "This Yeti is not on an active plan yet.";
-  }
-
-  const limit = Number(subscription.questions_limit || 0);
+  const planLimit =
+    subscription && activeStatuses.has(subscription.status)
+      ? Number(subscription.questions_limit || 0)
+      : 0;
+  const freeLimit = await getFreeQuestionCredits(ownerEmail);
+  const limit = planLimit + freeLimit;
   const used = await getQuestionUsage(ownerEmail);
   if (limit <= 0 || used >= limit) {
     return "This Yeti has used all AI question credits for this month.";

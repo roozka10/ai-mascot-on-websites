@@ -54,8 +54,7 @@ async function fetchSetupCredits(accessToken: string) {
   const websitesLimit = Number(data?.credits?.websites_limit || 0);
   const status = data?.subscription?.status;
   const hasActivePlan =
-    Boolean(data?.subscription) &&
-    ACTIVE_PLAN_STATUSES.has(status) &&
+    (Boolean(data?.subscription) && ACTIVE_PLAN_STATUSES.has(status)) ||
     websitesLimit > 0;
 
   return { hasActivePlan, websitesUsed, websitesLimit };
@@ -200,6 +199,100 @@ function QuestionLoadingGame({ message }: { message: string }) {
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
           This can take a few seconds while Yeti reads the site.
         </p>
+      </div>
+    </div>
+  );
+}
+
+function LuckySpinPopup({
+  spinning,
+  reward,
+  message,
+  onSpin,
+  onClose,
+}: {
+  spinning: boolean;
+  reward: { websites_granted: number; questions_granted: number; reward_label?: string | null } | null;
+  message?: string;
+  onSpin: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)]">
+        <Mascot size={58} />
+        <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+          Lucky Yeti Spin
+        </p>
+        <h2 className="mt-2 text-xl font-black tracking-[-0.05em] text-foreground">
+          We do not fake luck. Everybody gets different stuff.
+        </h2>
+        <p className="mt-2 text-xs font-bold leading-5 text-muted-foreground">
+          Spin once. If Yeti blesses you, you get free website slots and AI questions. If not, blame the mountain.
+        </p>
+
+        <div className="relative mx-auto mt-5 grid h-52 w-52 place-items-center">
+          <div
+            className={`absolute inset-0 rounded-full border-[10px] border-white shadow-[0_24px_80px_-42px_rgba(15,23,42,0.9)] transition-transform duration-1000 ${
+              spinning ? "animate-spin" : ""
+            }`}
+            style={{
+              background:
+                "conic-gradient(from 0deg,#7c3aed 0 45deg,#f8fafc 45deg 90deg,#111827 90deg 135deg,#ede9fe 135deg 180deg,#7c3aed 180deg 225deg,#f8fafc 225deg 270deg,#111827 270deg 315deg,#ede9fe 315deg 360deg)",
+            }}
+          >
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((dot) => (
+              <span
+                key={dot}
+                className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-white shadow"
+                style={{
+                  transform: `rotate(${dot * 45}deg) translateY(-88px)`,
+                  transformOrigin: "0 0",
+                }}
+              />
+            ))}
+          </div>
+          <div className="absolute -top-1 h-0 w-0 border-x-[12px] border-t-[22px] border-x-transparent border-t-foreground" />
+          <div className="relative grid h-24 w-24 place-items-center rounded-full border border-white/70 bg-white shadow-xl">
+            <img src={yeti} alt="Yeti mascot" className="h-16 w-16 object-contain" />
+          </div>
+        </div>
+
+        {reward ? (
+          <div className="mt-4 rounded-2xl bg-primary/8 px-4 py-3">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+              {reward.reward_label || "Yeti Prize"}
+            </p>
+            <p className="mt-1 text-lg font-black text-foreground">
+              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"} and +{reward.questions_granted.toLocaleString()} AI questions
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm font-bold text-foreground">
+            {message || "The wheel is real. The odds are rude."}
+          </p>
+        )}
+
+        <div className="mt-4 grid gap-2">
+          <button
+            type="button"
+            onClick={reward ? onClose : onSpin}
+            disabled={spinning}
+            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+          >
+            {spinning ? "Spinning..." : reward ? "Use my credits" : "Spin once"}
+          </button>
+          {!reward && (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={spinning}
+              className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-wait disabled:opacity-60"
+            >
+              Skip for now
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -651,16 +744,15 @@ function AccountPage({
     : subscription?.plan
     ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
     : "No paid plan yet";
-  const websiteCredits = isCanceled
-    ? "0"
-    : credits
+  const websiteCredits = credits
     ? `${credits.websites_used}/${credits.websites_limit || "-"}`
     : "-";
-  const questionCredits = isCanceled
-    ? "0"
-    : credits
+  const questionCredits = credits
     ? `${credits.questions_used.toLocaleString()}/${credits.questions_limit ? credits.questions_limit.toLocaleString() : "-"}`
     : "-";
+  const hasAnyCredits = Boolean(
+    credits && (credits.websites_limit > 0 || credits.questions_limit > 0),
+  );
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-8 pt-24">
@@ -687,7 +779,13 @@ function AccountPage({
                 {subscriptionLoading ? "Loading..." : planName}
               </h2>
               <p className="mt-1 text-xs font-bold text-muted-foreground">
-                {subscriptionLoading ? "Checking credits..." : isCanceled ? "Choose a plan to unlock credits" : "Plan and monthly credits"}
+                {subscriptionLoading
+                  ? "Checking credits..."
+                  : hasAnyCredits
+                    ? "Plan and bonus credits"
+                    : isCanceled
+                      ? "Choose a plan to unlock credits"
+                      : "Plan and monthly credits"}
               </p>
             </div>
           </div>
@@ -813,6 +911,13 @@ export default function Onboarding() {
   const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
   const [briefAnswers, setBriefAnswers] = useState<string[]>(() => BUSINESS_BRIEF_QUESTIONS.map(() => ""));
   const [currentBriefQuestionIndex, setCurrentBriefQuestionIndex] = useState(0);
+  const [showLuckySpin, setShowLuckySpin] = useState(false);
+  const [spinLoading, setSpinLoading] = useState(false);
+  const [spinReward, setSpinReward] = useState<{
+    websites_granted: number;
+    questions_granted: number;
+    reward_label?: string | null;
+  } | null>(null);
   const [listening, setListening] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
@@ -837,6 +942,40 @@ export default function Onboarding() {
     }
     setStep(2);
   };
+
+  async function refreshSpinEligibility(accessToken: string) {
+    const response = await fetch("/api/account-subscription", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return;
+
+    const websitesLimit = Number(data?.credits?.websites_limit || 0);
+    const questionsLimit = Number(data?.credits?.questions_limit || 0);
+    const hasSpun = Boolean(data?.free_credits?.has_spun);
+    setShowLuckySpin(!hasSpun && websitesLimit === 0 && questionsLimit === 0);
+  }
+
+  async function spinForCredits() {
+    if (!session?.access_token) return;
+    setSpinLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/free-credits-spin", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || "Could not spin for credits.");
+      setSpinReward(data.reward || null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not spin for credits.");
+      setShowLuckySpin(false);
+    } finally {
+      setSpinLoading(false);
+    }
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -951,6 +1090,11 @@ export default function Onboarding() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!session?.access_token || view !== "setup" || step !== 0) return;
+    void refreshSpinEligibility(session.access_token);
+  }, [session?.access_token, step, view]);
 
   const startListening = () => {
     if (!recognitionRef.current) {
@@ -1564,6 +1708,18 @@ export default function Onboarding() {
                 {!loading && <ArrowRight className="h-4 w-4" />}
               </button>
               {isGeneratingQuestions && <QuestionLoadingGame message={statusText} />}
+              {showLuckySpin && (
+                <LuckySpinPopup
+                  spinning={spinLoading}
+                  reward={spinReward}
+                  message="Your account has 0 credits. Spin once and see what Yeti gives you."
+                  onSpin={() => void spinForCredits()}
+                  onClose={() => {
+                    setShowLuckySpin(false);
+                    setSpinReward(null);
+                  }}
+                />
+              )}
             </StepShell>
           )}
 
