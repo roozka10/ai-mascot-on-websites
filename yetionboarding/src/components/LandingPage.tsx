@@ -24,8 +24,8 @@ function HeroNav({ onStart }: LandingPageProps) {
   const [open, setOpen] = useState(false);
   const navItems = [
     { label: "How", href: "#how-it-works" },
-    { label: "Takes", href: "#takes" },
     { label: "Compare", href: "#compare" },
+    { label: "Takes", href: "#takes" },
     { label: "Mission", href: "#mission" },
   ];
 
@@ -85,6 +85,9 @@ function HeroNav({ onStart }: LandingPageProps) {
 function HeroYetiDemo() {
   return (
     <div id="hero-demo" className="relative mx-auto flex h-[420px] w-full max-w-[520px] items-center justify-center lg:h-[610px] lg:-translate-x-8 lg:-translate-y-8 lg:justify-end">
+      <div className="pointer-events-none absolute top-8 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.24em] text-[#7B6FE6] shadow-sm lg:top-14">
+        Try demo
+      </div>
       <iframe title="Yeti Guide live demo" src={HERO_DEMO_WIDGET_SRC} allow="microphone" className="h-full w-full border-0 bg-transparent" />
     </div>
   );
@@ -218,39 +221,6 @@ export function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
-      <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                Honest takes
-              </p>
-              <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                Websites need guides, not louder chatbots.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-white/68">
-                The point is not to add another widget. The point is to make getting help feel effortless.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {takes.map((take, index) => (
-                <article key={take.title} className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5">
-                  <div className="flex items-start gap-4">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="text-lg font-black tracking-tight">{take.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-white/68">{take.text}</p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="compare" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <div>
@@ -289,6 +259,39 @@ export function LandingPage({ onStart }: LandingPageProps) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                Honest takes
+              </p>
+              <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                Websites need guides, not louder chatbots.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-white/68">
+                The point is not to add another widget. The point is to make getting help feel effortless.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {takes.map((take, index) => (
+                <article key={take.title} className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5">
+                  <div className="flex items-start gap-4">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <h3 className="text-lg font-black tracking-tight">{take.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-white/68">{take.text}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
