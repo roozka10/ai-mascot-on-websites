@@ -39,6 +39,28 @@ async function getSubscription(email, subscriptionId) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
+async function updateStoredSubscription(subscriptionId, status) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey || !subscriptionId) return;
+
+  await fetch(
+    `${supabaseUrl}/rest/v1/yeti_subscriptions?stripe_subscription_id=eq.${encodeURIComponent(subscriptionId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        status,
+        updated_at: new Date().toISOString(),
+      }),
+    },
+  );
+}
+
 function encodeStripeParams(params, prefix) {
   const pairs = [];
   for (const [key, value] of Object.entries(params)) {
@@ -53,21 +75,12 @@ function encodeStripeParams(params, prefix) {
   return pairs;
 }
 
-async function cancelAtPeriodEnd(subscriptionId, reason) {
-  const body = new URLSearchParams(
-    encodeStripeParams({
-      cancel_at_period_end: true,
-      metadata: {
-        cancel_reason: reason.slice(0, 500),
-      },
-    }),
-  ).toString();
-
-  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
-    method: "POST",
+async function stripeRequest(path, { method = "GET", body } = {}) {
+  const response = await fetch(`https://api.stripe.com/v1${path}`, {
+    method,
     headers: {
       Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      ...(body ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       "Stripe-Version": "2026-04-22.dahlia",
     },
     body,
@@ -75,9 +88,39 @@ async function cancelAtPeriodEnd(subscriptionId, reason) {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data?.error?.message || "Could not cancel subscription");
+    throw new Error(data?.error?.message || "Stripe request failed");
   }
   return data;
+}
+
+async function getStripeSubscription(subscriptionId) {
+  return stripeRequest(`/subscriptions/${subscriptionId}`);
+}
+
+async function getStripeCustomer(customerId) {
+  if (!customerId) return null;
+  return stripeRequest(`/customers/${customerId}`);
+}
+
+async function saveCancelReason(subscriptionId, reason) {
+  const body = new URLSearchParams(
+    encodeStripeParams({
+      metadata: {
+        cancel_reason: reason.slice(0, 500),
+      },
+    }),
+  ).toString();
+
+  await stripeRequest(`/subscriptions/${subscriptionId}`, {
+    method: "POST",
+    body,
+  });
+}
+
+async function cancelImmediately(subscriptionId) {
+  return stripeRequest(`/subscriptions/${subscriptionId}`, {
+    method: "DELETE",
+  });
 }
 
 export default async function handler(req, res) {
@@ -109,16 +152,36 @@ export default async function handler(req, res) {
       return;
     }
 
-    const subscription = await getSubscription(user.email, subscriptionId);
-    if (!subscription) {
+    const storedSubscription = await getSubscription(user.email, subscriptionId);
+    const stripeSubscription = await getStripeSubscription(subscriptionId);
+    const stripeCustomer = await getStripeCustomer(
+      typeof stripeSubscription.customer === "string"
+        ? stripeSubscription.customer
+        : stripeSubscription.customer?.id,
+    );
+    const stripeEmail = String(stripeCustomer?.email || "").toLowerCase();
+
+    if (!storedSubscription && stripeEmail !== user.email.toLowerCase()) {
       res.status(404).json({ error: "Subscription not found for this account." });
       return;
     }
 
-    const stripeSubscription = await cancelAtPeriodEnd(subscriptionId, cleanReason);
+    if (stripeSubscription.status === "canceled") {
+      await updateStoredSubscription(subscriptionId, "canceled");
+      res.status(200).json({
+        status: "canceled",
+        cancel_at_period_end: false,
+      });
+      return;
+    }
+
+    await saveCancelReason(subscriptionId, cleanReason);
+    const canceledSubscription = await cancelImmediately(subscriptionId);
+    await updateStoredSubscription(subscriptionId, canceledSubscription.status || "canceled");
+
     res.status(200).json({
-      status: stripeSubscription.status,
-      cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+      status: canceledSubscription.status,
+      cancel_at_period_end: canceledSubscription.cancel_at_period_end,
     });
   } catch (error) {
     console.error("[Account] Cancel subscription failed", error);

@@ -538,10 +538,10 @@ function AccountPage({
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Could not cancel your plan.");
 
-      setSubscription((current) => current ? { ...current, status: "canceling" } : current);
+      setSubscription((current) => current ? { ...current, status: "canceled" } : current);
       setShowCancel(false);
       setCancelReason("");
-      setCancelMessage("Your plan will cancel at the end of the current period.");
+      setCancelMessage("Your plan has been canceled.");
     } catch (error) {
       setCancelMessage(error instanceof Error ? error.message : "Could not cancel your plan.");
     } finally {
@@ -616,53 +616,6 @@ function AccountPage({
             </div>
           </div>
 
-          {showCancel && (
-            <div className="mt-4 rounded-2xl border border-red-100 bg-red-50/70 p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black text-foreground">Before you cancel</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Stay and we can give you 20% off your next 2 months. Tell us what went wrong so we can fix it.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCancel(false)}
-                  className="rounded-full p-1 text-muted-foreground transition hover:bg-white hover:text-foreground"
-                  aria-label="Close cancellation"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <textarea
-                value={cancelReason}
-                onChange={(event) => setCancelReason(event.target.value)}
-                placeholder="Why do you want to cancel?"
-                className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-border bg-white px-3 py-2 text-xs outline-none focus:border-primary"
-              />
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCancel(false);
-                    setCancelMessage("Discount request saved. We will help you keep Yeti cheaper.");
-                  }}
-                  className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
-                >
-                  Keep Yeti with discount
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelSubscription}
-                  disabled={cancelLoading}
-                  className="inline-flex items-center justify-center rounded-full border border-red-200 bg-white px-4 py-2.5 text-xs font-black text-red-600 transition hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
-                >
-                  {cancelLoading ? "Cancelling..." : "Cancel anyway"}
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <a
               href="/pricing"
@@ -674,10 +627,10 @@ function AccountPage({
             <button
               type="button"
               onClick={() => setShowCancel(true)}
-              disabled={!subscription?.stripe_subscription_id || subscription?.status === "canceling"}
+              disabled={!subscription?.stripe_subscription_id || subscription?.status === "canceled"}
               className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Cancel plan
+              {subscription?.status === "canceled" ? "Plan canceled" : "Cancel plan"}
             </button>
           </div>
         </div>
@@ -691,6 +644,54 @@ function AccountPage({
           Log out
         </button>
       </section>
+
+      {showCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-[1.75rem] border border-red-100 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.65)]">
+            <button
+              type="button"
+              onClick={() => setShowCancel(false)}
+              className="ml-auto flex rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              aria-label="Close cancellation"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <Mascot size={74} />
+            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-red-500">
+              Cancel plan
+            </p>
+            <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground">
+              Are you sure?
+            </h2>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              This will cancel your Stripe subscription now. Tell us why before you go.
+            </p>
+            <textarea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              placeholder="Why do you want to cancel?"
+              className="mt-4 min-h-24 w-full resize-none rounded-2xl border border-border bg-white px-3 py-2 text-xs outline-none focus:border-primary"
+            />
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                onClick={cancelSubscription}
+                disabled={cancelLoading}
+                className="inline-flex items-center justify-center rounded-full bg-red-500 px-4 py-2.5 text-xs font-black text-white transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-70"
+              >
+                {cancelLoading ? "Cancelling..." : "Cancel anyway"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCancel(false)}
+                className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted"
+              >
+                Never mind
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
