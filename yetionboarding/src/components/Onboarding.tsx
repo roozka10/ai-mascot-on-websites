@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { LandingPage } from "@/components/LandingPage";
 import yeti from "@/assets/yeti.png";
+import mascotHandsUp from "../../../mascotwithhandsup.png";
 import {
   generateYetiId,
   getAuthRedirectUrl,
@@ -168,38 +169,20 @@ function StepShell({ step, children }: { step: number; children: React.ReactNode
   );
 }
 
-function QuestionLoadingGame({ message }: { message: string }) {
+function QuestionLoadingGame() {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)]">
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-          Yeti is learning
-        </p>
-        <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground">
-          Building your questions
-        </h2>
-        <div className="relative mx-auto mt-5 h-36 max-w-[280px] overflow-hidden rounded-3xl bg-[linear-gradient(180deg,#f8f7ff,#ffffff)]">
-          <div className="absolute bottom-9 left-0 right-0 h-[3px] bg-foreground/80" />
-          <img
-            src={yeti}
-            alt="Yeti mascot"
-            className="absolute bottom-10 left-7 h-16 w-16 animate-bounce object-contain drop-shadow-lg"
-          />
-          {[0, 1, 2].map((item) => (
-            <span
-              key={item}
-              className="absolute bottom-10 h-7 w-5 rounded-md bg-primary/85 shadow-sm"
-              style={{ right: `${28 + item * 58}px` }}
-            />
-          ))}
-        </div>
-        <p className="mt-4 text-sm font-bold text-foreground">
-          {message || "Checking your website..."}
-        </p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          This can take a few seconds while Yeti reads the site.
-        </p>
-      </div>
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-start bg-white/80 px-4 pt-28 text-center backdrop-blur-md">
+      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
+        Wait...
+      </p>
+      <h2 className="mt-2 max-w-sm text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
+        Yeti is reading your website
+      </h2>
+      <img
+        src={mascotHandsUp}
+        alt="Yeti mascot waiting"
+        className="mt-8 w-[230px] max-w-[72vw] select-none object-contain drop-shadow-[0_24px_34px_rgba(15,23,42,0.16)] sm:w-[300px]"
+      />
     </div>
   );
 }
@@ -1168,7 +1151,10 @@ export default function Onboarding() {
         return;
       }
       setStatusText("Writing questions for your website...");
-      const questions = await fetchPersonalizedQuestions(name.trim(), site.trim());
+      const [questions] = await Promise.all([
+        fetchPersonalizedQuestions(name.trim(), site.trim()),
+        new Promise((resolve) => setTimeout(resolve, 5000)),
+      ]);
       setBriefQuestions(questions);
       setBriefAnswers(questions.map(() => ""));
       setCurrentBriefQuestionIndex(0);
@@ -1734,7 +1720,7 @@ export default function Onboarding() {
                 {loading ? "Checking plan..." : "Continue"}
                 {!loading && <ArrowRight className="h-4 w-4" />}
               </button>
-              {isGeneratingQuestions && <QuestionLoadingGame message={statusText} />}
+              {isGeneratingQuestions && <QuestionLoadingGame />}
               {showLuckySpin && (
                 <LuckySpinPopup
                   spinning={spinLoading}
