@@ -6,11 +6,13 @@ import {
   Sparkles,
   Check,
   X,
+  ChevronRight,
   Copy,
   ShieldCheck,
   Clock,
   Globe,
   Loader2,
+  Menu,
   Mic,
   Square,
   BotOff,
@@ -36,6 +38,10 @@ import {
 const TOTAL = 3;
 
 const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
+const HERO_VIDEO_URL =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260424_064411_9e9d7f84-9277-41f4-ab10-59172d89e6be.mp4";
+const HERO_POSTER_URL = "https://images.unsplash.com/photo-1557683316-973673baf926?w=1600&q=60";
+const HERO_DEMO_WIDGET_SRC = "/widget/index.html?demo=1&large=1&embed=1&preview=1";
 
 type SpeechRecognitionResultListLike = {
   length: number;
@@ -397,6 +403,78 @@ function LoginScreen({
   );
 }
 
+function HeroNav({ onStart }: { onStart: () => void }) {
+  const [open, setOpen] = useState(false);
+  const navItems = [
+    { label: "How", href: "#how-it-works" },
+    { label: "Problem", href: "#problem" },
+    { label: "Voice", href: "#voice" },
+    { label: "Takes", href: "#takes" },
+    { label: "Compare", href: "#compare" },
+    { label: "Mission", href: "#mission" },
+  ];
+
+  return (
+    <div className="flex justify-center px-3 pt-4 sm:px-4 sm:pt-6">
+      <nav className="relative flex w-full max-w-[760px] items-center rounded-full border border-neutral-200 bg-white py-2 pl-2 pr-2 shadow-sm">
+        <button type="button" onClick={onStart} className="shrink-0">
+          <img src={yeti} alt="Yeti Guide" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
+        </button>
+        <div className="hidden items-center gap-4 pl-6 text-[13px] md:flex">
+          {navItems.map((item) => (
+            <a key={item.href} href={item.href} className="inline-flex items-center gap-2 text-[#0b0f1a] transition hover:text-[#7B6FE6]">
+              <span>{item.label}</span>
+            </a>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onStart}
+            className="inline-flex items-center gap-2 rounded-full bg-[#7B6FE6] py-2 pl-4 pr-2 text-sm font-medium text-white"
+          >
+            <span>Sign up</span>
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setOpen((value) => !value)}
+            className="grid h-9 w-9 place-items-center rounded-full bg-neutral-100 md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+
+        {open && (
+          <div className="absolute left-2 right-2 top-full z-20 mt-2 rounded-2xl border border-neutral-200 bg-white p-3 shadow-lg md:hidden">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-[#0b0f1a]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+}
+
+function HeroYetiDemo() {
+  return (
+    <div id="hero-demo" className="relative mx-auto flex h-[420px] w-full max-w-[520px] items-center justify-center lg:h-[610px] lg:justify-end">
+      <iframe title="Yeti Guide live demo" src={HERO_DEMO_WIDGET_SRC} allow="microphone" className="h-full w-full border-0 bg-transparent" />
+    </div>
+  );
+}
+
 function LandingPage({ onStart }: { onStart: () => void }) {
   const problems = [
     {
@@ -454,81 +532,68 @@ function LandingPage({ onStart }: { onStart: () => void }) {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
-      <nav className="sticky top-3 z-40 mx-auto flex w-[calc(100%-24px)] max-w-5xl items-center justify-between rounded-full border border-white/70 bg-white/82 px-3 py-2 shadow-[0_18px_58px_-36px_rgba(15,23,42,0.36)] backdrop-blur-xl">
-        <button type="button" onClick={onStart} className="flex items-center gap-2 rounded-full px-2 py-1 text-left">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary/10">
-            <img src={yeti} alt="" className="h-8 w-8 object-contain" />
-          </span>
-          <span className="text-base font-black tracking-tight">Yeti Guide</span>
-        </button>
-        <div className="hidden items-center gap-1 md:flex">
-          {[
-            ["How it works", "#how-it-works"],
-            ["Problem", "#problem"],
-            ["Takes", "#takes"],
-            ["Compare", "#compare"],
-            ["Voice", "#voice"],
-            ["Mission", "#mission"],
-          ].map(([label, href]) => (
-            <a key={href} href={href} className="rounded-full px-3 py-2 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground">
-              {label}
-            </a>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={onStart}
-          className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-[0_16px_45px_-24px_rgba(123,111,230,0.85)] transition hover:bg-primary/90"
-        >
-          Create your Yeti
-        </button>
-      </nav>
-
-      <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-5 pb-16 pt-10 lg:grid-cols-[1.05fr_0.95fr] lg:pb-24 lg:pt-20">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-white/75 px-4 py-2 text-xs font-bold text-primary shadow-sm backdrop-blur">
-            <Zap className="h-3.5 w-3.5" />
-            Voice-first help for websites
-          </div>
-          <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.06em] text-foreground sm:text-6xl lg:text-7xl">
-            Your website does not need another{" "}
-            <span className="text-muted-foreground line-through decoration-accent/70">chatbot</span>.
-            <br />
-            It needs a <span className="text-primary">guide</span>.
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
-            Yeti scans your site, learns what matters, and gives visitors short spoken answers.
-            No forms, no typing homework, no awkward bot vibes.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onStart}
-              className="group inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-[0_22px_55px_-26px_rgba(123,111,230,0.9)] transition hover:bg-primary/90"
-            >
-              Build my Yeti
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-            </button>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center rounded-full border border-border bg-white/70 px-7 py-4 text-sm font-bold text-foreground shadow-sm backdrop-blur transition hover:bg-white"
-            >
-              See how it works
-            </a>
-          </div>
-        </div>
-
-        <div className="relative mx-auto flex w-full max-w-[640px] flex-col items-center justify-center text-center lg:-translate-x-2 lg:-translate-y-12 lg:justify-self-center">
-          <div className="absolute inset-0 rounded-full bg-primary/20 blur-3xl" />
-          <iframe
-            title="Yeti Guide voice demo"
-            src="/widget/index.html?demo=1&large=1&embed=1"
-            allow="microphone"
-            className="relative h-[680px] w-full max-w-[640px] border-0 bg-transparent"
+      <section className="min-h-screen w-full bg-[#ededed] p-3 font-sans sm:p-4">
+        <div className="relative h-[calc(100vh-24px)] w-full overflow-hidden rounded-2xl bg-[#d9d9d9] sm:h-[calc(100vh-32px)] sm:rounded-3xl">
+          <video
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            src={HERO_VIDEO_URL}
+            poster={HERO_POSTER_URL}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            disableRemotePlayback
+            webkit-playsinline="true"
+            x5-playsinline="true"
           />
+          <div className="absolute inset-0 bg-white/10" />
+          <div className="relative z-10">
+            <HeroNav onStart={onStart} />
+            <div className="grid min-h-[calc(100vh-96px)] items-center gap-4 px-4 pb-8 pt-8 text-center md:px-10 lg:grid-cols-[1fr_0.9fr] lg:px-16 lg:text-left">
+              <div className="mx-auto max-w-4xl lg:mx-0">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-[13px] shadow-sm">
+                  <span className="h-2 w-2 rounded-full bg-[#7B6FE6]" />
+                  Yeti Guide
+                </div>
+                <h1
+                  className="mt-5 font-medium text-[#0b0f1a] sm:mt-6"
+                  style={{ fontSize: "clamp(36px, 8vw, 72px)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
+                >
+                  Voice guides for{" "}
+                <span
+                  className="text-[#7B6FE6]"
+                  style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400 }}
+                >
+                    websites
+                  </span>
+                  <br />
+                  that hate chatbots
+                </h1>
+                <p
+                  className="mx-auto mt-4 max-w-xl px-2 text-neutral-700 sm:mt-6 lg:mx-0 lg:px-0"
+                  style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}
+                >
+                  Yeti scans your site, learns your brand, and gives visitors short spoken answers.
+                </p>
+                <button
+                  type="button"
+                  onClick={onStart}
+                  className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#0b0f1a] py-2 pl-6 pr-2 text-sm text-white sm:mt-8 sm:py-2.5 sm:pl-7"
+                >
+                  Get Started
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-white/15 sm:h-7 sm:w-7">
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </button>
+              </div>
+              <HeroYetiDemo />
+            </div>
+          </div>
         </div>
       </section>
 
+      <div className="cloud-section-bg">
       <section id="how-it-works" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="max-w-2xl">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">How it works</p>
@@ -701,6 +766,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
           <ArrowRight className="h-4 w-4" />
         </button>
       </section>
+      </div>
     </main>
   );
 }

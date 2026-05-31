@@ -362,6 +362,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const isDemo = params.get('demo') === '1';
+    const isDemoPreview = params.get('preview') === '1';
     const isDemoLarge = params.get('large') === '1';
     const demoStorageKey = 'yeti-guide-landing-demo-used';
     if (isDemoLarge) {
@@ -401,7 +402,7 @@ Keep it one short, friendly, fun sentence.`;
         businessName = 'Yeti Guide';
         configReady = true;
         setBubbleText(
-          localStorage.getItem(demoStorageKey) === 'true'
+          !isDemoPreview && localStorage.getItem(demoStorageKey) === 'true'
             ? 'Demo already used here. Create your Yeti to try the real guide!'
             : 'Ask me one question about Yeti Guide.'
         );
@@ -550,7 +551,7 @@ Keep it one short, friendly, fun sentence.`;
         isSpeaking = false;
         setYetiState('idle');
         setBubbleText(
-          isDemo
+          isDemo && !isDemoPreview
             ? 'Demo used here. Create your Yeti to try the real guide!'
             : 'Need help finding something? I can guide you.'
         );
@@ -596,7 +597,9 @@ Keep it one short, friendly, fun sentence.`;
 
     async function askYetiBrain(userText) {
       if (isDemo) {
-        localStorage.setItem(demoStorageKey, 'true');
+        if (!isDemoPreview) {
+          localStorage.setItem(demoStorageKey, 'true');
+        }
       }
 
       chatHistory.push({ role: 'user', content: userText });
@@ -687,7 +690,7 @@ Keep it one short, friendly, fun sentence.`;
     }
 
     function startListening() {
-      if (isDemo && localStorage.getItem(demoStorageKey) === 'true') {
+      if (isDemo && !isDemoPreview && localStorage.getItem(demoStorageKey) === 'true') {
         setBubbleText('Demo already used here. Create your Yeti to try the real guide!');
         return;
       }

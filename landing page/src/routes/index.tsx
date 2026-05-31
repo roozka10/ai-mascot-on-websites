@@ -1,15 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { HeroWidget } from "@/components/HeroWidget";
 import { useReveal } from "@/hooks/use-reveal";
 import yeti from "@/assets/yeti-mascot.png";
+import { useState } from "react";
 import {
   ArrowRight,
   BotOff,
   Check,
+  ChevronRight,
   Code2,
   Keyboard,
+  Menu,
   MessageSquareText,
   Mic,
   ScanSearch,
@@ -19,6 +20,11 @@ import {
   X,
   Zap,
 } from "lucide-react";
+
+const heroVideoUrl =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260424_064411_9e9d7f84-9277-41f4-ab10-59172d89e6be.mp4";
+const heroPosterUrl = "https://images.unsplash.com/photo-1557683316-973673baf926?w=1600&q=60";
+const demoWidgetSrc = "https://yetiassistant.online/widget/index.html?demo=1&large=1&embed=1&preview=1";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -100,48 +106,145 @@ const comparisonRows = [
   { label: "No form before helping", yeti: true, chatbot: false },
 ];
 
+function VideoHero() {
+  return (
+    <section className="min-h-screen w-full bg-[#ededed] p-3 font-sans sm:p-4">
+      <div className="relative h-[calc(100vh-24px)] w-full overflow-hidden rounded-2xl bg-[#d9d9d9] sm:h-[calc(100vh-32px)] sm:rounded-3xl">
+        <video
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          src={heroVideoUrl}
+          poster={heroPosterUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          disableRemotePlayback
+          webkit-playsinline="true"
+          x5-playsinline="true"
+        />
+        <div className="absolute inset-0 bg-white/10" />
+        <div className="relative z-10">
+          <HeroNav />
+          <div className="grid min-h-[calc(100vh-96px)] items-center gap-4 px-4 pb-8 pt-8 text-center md:px-10 lg:grid-cols-[1fr_0.9fr] lg:px-16 lg:text-left">
+            <div className="mx-auto max-w-4xl lg:mx-0">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-[13px] shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-[#7B6FE6]" />
+                Yeti Guide
+              </div>
+              <h1
+                className="mt-5 font-medium text-[#0b0f1a] sm:mt-6"
+                style={{ fontSize: "clamp(36px, 8vw, 72px)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
+              >
+                Voice guides for{" "}
+                <span
+                  className="text-[#7B6FE6]"
+                  style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400 }}
+                >
+                  websites
+                </span>
+                <br />
+                that hate chatbots
+              </h1>
+              <p
+                className="mx-auto mt-4 max-w-xl px-2 text-neutral-700 sm:mt-6 lg:mx-0 lg:px-0"
+                style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}
+              >
+                Yeti scans your site, learns your brand, and gives visitors short spoken answers.
+              </p>
+              <a
+                href="#cta"
+                className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#0b0f1a] py-2 pl-6 pr-2 text-sm text-white sm:mt-8 sm:py-2.5 sm:pl-7"
+              >
+                Get Started
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-white/15 sm:h-7 sm:w-7">
+                  <ChevronRight className="h-4 w-4" />
+                </span>
+              </a>
+            </div>
+            <HeroYetiDemo />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroNav() {
+  const [open, setOpen] = useState(false);
+  const navItems = [
+    { label: "How", href: "#how" },
+    { label: "Problem", href: "#problem" },
+    { label: "Voice", href: "#voice" },
+    { label: "Takes", href: "#takes" },
+    { label: "Compare", href: "#compare" },
+    { label: "Mission", href: "#mission" },
+  ];
+
+  return (
+    <div className="flex justify-center px-3 pt-4 sm:px-4 sm:pt-6">
+      <nav className="relative flex w-full max-w-[760px] items-center rounded-full border border-neutral-200 bg-white py-2 pl-2 pr-2 shadow-sm">
+        <a href="#" className="shrink-0">
+          <img src={yeti} alt="Yeti Guide" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
+        </a>
+        <div className="hidden items-center gap-4 pl-6 text-[13px] md:flex">
+          {navItems.map((item) => (
+            <a key={item.href} href={item.href} className="inline-flex items-center gap-2 text-[#0b0f1a] transition hover:text-[#7B6FE6]">
+              <span>{item.label}</span>
+            </a>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <a href="#cta" className="inline-flex items-center gap-2 rounded-full bg-[#7B6FE6] py-2 pl-4 pr-2 text-sm font-medium text-white">
+            <span>Sign up</span>
+            <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20">
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </a>
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setOpen((value) => !value)}
+            className="grid h-9 w-9 place-items-center rounded-full bg-neutral-100 md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+
+        {open && (
+          <div className="absolute left-2 right-2 top-full z-20 mt-2 rounded-2xl border border-neutral-200 bg-white p-3 shadow-lg md:hidden">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-xl px-3 py-2 text-sm text-[#0b0f1a]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </nav>
+    </div>
+  );
+}
+
+function HeroYetiDemo() {
+  return (
+    <div id="hero-demo" className="relative mx-auto flex h-[420px] w-full max-w-[520px] items-center justify-center lg:h-[610px] lg:justify-end">
+      <iframe title="Yeti Guide live demo" src={demoWidgetSrc} allow="microphone" className="h-full w-full border-0 bg-transparent" />
+    </div>
+  );
+}
+
 function Index() {
   const ref = useReveal<HTMLDivElement>();
   return (
     <div ref={ref} className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      <VideoHero />
 
-      <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-28">
-        <div className="absolute inset-0 -z-10 shimmer-bg opacity-70" aria-hidden />
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="reveal">
-            <span className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs font-semibold text-foreground shadow-soft">
-              <span className="w-2 h-2 rounded-full bg-accent" /> Voice-first help for websites
-            </span>
-            <h1 className="mt-6 font-display text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.02] text-balance">
-              Your website doesn't need another{" "}
-              <span className="line-through text-muted-foreground/70 font-bold">chatbot</span>.
-              <br />
-              It needs a <span className="text-primary">guide</span>.
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Yeti scans your site, learns what matters, and gives visitors short spoken answers. No forms. No typing. No 500-word chatbot essays.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <a href="#cta" className="group inline-flex items-center gap-2 px-7 py-4 rounded-full bg-primary text-primary-foreground font-semibold shadow-soft hover:shadow-glow transition-all">
-                Create Your Yeti
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a href="#how" className="inline-flex items-center px-7 py-4 rounded-full border border-border bg-background/60 backdrop-blur font-semibold hover:bg-muted transition-colors">
-                See How It Works
-              </a>
-            </div>
-            <p className="mt-10 text-sm text-muted-foreground">
-              Works on any website. <span className="text-foreground/80 font-medium">Shopify · Webflow · WordPress · Custom · Anything.</span>
-            </p>
-          </div>
-
-          <div className="reveal lg:pl-8">
-            <HeroWidget />
-          </div>
-        </div>
-      </section>
-
+      <div className="cloud-section-bg">
       <section id="how" className="py-20 lg:py-28 bg-gradient-to-b from-background to-secondary/25">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div className="reveal max-w-3xl">
@@ -407,6 +510,7 @@ function Index() {
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 }
