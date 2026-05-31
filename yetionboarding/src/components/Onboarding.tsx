@@ -557,7 +557,7 @@ function AccountPage({
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-8 pt-24">
-      <section className="w-full max-w-xl rounded-[1.75rem] border border-border/60 bg-white p-5 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] sm:p-6">
+      <section className="w-full max-w-2xl rounded-[1.75rem] border border-border/60 bg-white p-5 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] sm:p-6">
         <Mascot size={58} />
         <p className="mt-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-primary">
           Account
@@ -572,7 +572,7 @@ function AccountPage({
           {email || "Unknown email"}
         </p>
 
-        <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-4">
+        <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
@@ -598,20 +598,20 @@ function AccountPage({
             </p>
           )}
 
-          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
                 {subscription?.websites_limit ?? "-"}
               </p>
             </div>
-            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Questions/mo</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
                 {subscription?.questions_limit?.toLocaleString() ?? "-"}
               </p>
             </div>
-            <div className="rounded-2xl bg-white px-3 py-3 shadow-sm">
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Renews</p>
               <p className="mt-1.5 text-sm font-black text-foreground">
                 {renewsAt || "-"}
