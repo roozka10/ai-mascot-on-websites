@@ -775,6 +775,7 @@ export default function Onboarding() {
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
+  const [currentBriefQuestionIndex, setCurrentBriefQuestionIndex] = useState(0);
   const [listening, setListening] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
@@ -785,9 +786,11 @@ export default function Onboarding() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const heardSpeechRef = useRef(false);
 
   const canContinue = name.trim().length > 0 && site.trim().length > 0;
-  const liveTranscript = `${transcript}${transcript && interimTranscript ? " " : ""}${interimTranscript}`;
+  const currentBriefQuestion =
+    briefQuestions[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[0];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -822,6 +825,7 @@ export default function Onboarding() {
       }
 
       if (finalText.trim()) {
+        heardSpeechRef.current = true;
         setTranscript((current) => `${current} ${finalText.trim()}`.trim());
       }
       setInterimTranscript(interimText.trim());
@@ -840,6 +844,10 @@ export default function Onboarding() {
     recognition.onend = () => {
       setListening(false);
       setInterimTranscript("");
+      if (heardSpeechRef.current) {
+        setCurrentBriefQuestionIndex((current) => Math.min(current + 1, BUSINESS_BRIEF_QUESTIONS.length - 1));
+        heardSpeechRef.current = false;
+      }
     };
 
     recognitionRef.current = recognition;
@@ -901,6 +909,7 @@ export default function Onboarding() {
 
     setError("");
     setInterimTranscript("");
+    heardSpeechRef.current = false;
     setVoiceStarted(true);
 
     try {
@@ -937,6 +946,7 @@ export default function Onboarding() {
       setStatusText("Writing questions for your website...");
       const questions = await fetchPersonalizedQuestions(name.trim(), site.trim());
       setBriefQuestions(questions);
+      setCurrentBriefQuestionIndex(0);
       setStep(1);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not check your plan.");
@@ -1162,6 +1172,8 @@ export default function Onboarding() {
                       stopListening();
                       setTranscript("");
                       setInterimTranscript("");
+                      setBriefQuestions(BUSINESS_BRIEF_QUESTIONS);
+                      setCurrentBriefQuestionIndex(0);
                       setVoiceStarted(false);
                       setSnippet("");
                       setError("");
@@ -1215,68 +1227,41 @@ export default function Onboarding() {
     return (
       <>
       {nav}
-      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-28">
-        <div className="w-full max-w-[760px] mx-auto">
+      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-5 pt-24">
+        <div className="w-full max-w-[560px] mx-auto">
           <StepShell step={1}>
             <Stepper step={step} />
 
-            <div className="flex min-h-[calc(100dvh-96px)] flex-col items-center justify-center text-center">
-              <div className="mb-6 w-full rounded-[1.75rem] border border-border/60 bg-white/85 p-4 text-left shadow-[0_18px_58px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-5">
-                <div className="flex flex-col gap-2 text-center sm:text-left">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                    Personalized from your website
-                  </p>
-                  <h1 className="text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
-                    Answer these 5 quick questions
-                  </h1>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    Yeti checks your website, then asks simple questions to fill in what customers usually ask support teams.
-                  </p>
-                </div>
+            <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-center text-center">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+                Personalized from your website
+              </p>
+              <p className="mt-2 text-xs font-bold text-muted-foreground">
+                Question {currentBriefQuestionIndex + 1} of {briefQuestions.length}
+              </p>
+              <h1 className="mt-3 max-w-xl text-balance text-3xl font-black leading-tight tracking-[-0.06em] text-foreground sm:text-4xl">
+                {currentBriefQuestion}
+              </h1>
+              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+                Tap the mic and answer out loud. Yeti saves your answer, then moves to the next question.
+              </p>
 
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {briefQuestions.map((question, index) => (
-                    <div
-                      key={question}
-                      className={`rounded-2xl border border-border/60 bg-white px-3 py-3 shadow-sm ${
-                        index === 0 ? "sm:col-span-2" : ""
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-black text-primary">
-                          {index + 1}
-                        </span>
-                        <p className="text-sm font-semibold leading-5 text-foreground">
-                          {question}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative w-full max-w-[440px] rounded-[1.75rem] border-[3px] border-foreground/90 bg-white px-5 py-5 shadow-[0_18px_58px_-36px_rgba(15,23,42,0.45)] sm:px-8 sm:py-6">
-                <textarea
-                  value={liveTranscript}
-                  onChange={(event) => {
-                    setTranscript(event.target.value);
-                    setInterimTranscript("");
-                    setVoiceStarted(true);
-                  }}
-                  rows={3}
-                  placeholder={
-                    voiceStarted
-                      ? ""
-                      : "Tap the mic and answer the questions above, or type your answers here."
-                  }
-                  className="w-full resize-none bg-transparent text-center text-xl font-bold leading-7 tracking-[-0.035em] text-foreground placeholder:text-foreground outline-none sm:text-2xl sm:leading-8"
-                />
-                {!voiceStarted && !transcript && !interimTranscript && (
-                  <p className="mt-1 text-xs font-semibold text-muted-foreground">
-                    Yeti scans your website too, but these answers make it much smarter.
-                  </p>
-                )}
-                <div className="absolute -bottom-[15px] left-1/2 h-8 w-8 -translate-x-1/2 rotate-45 border-b-[3px] border-r-[3px] border-foreground/90 bg-white" />
+              <div className="mt-5 flex items-center justify-center gap-1.5">
+                {briefQuestions.map((question, index) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => setCurrentBriefQuestionIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentBriefQuestionIndex
+                        ? "w-8 bg-primary"
+                        : index < currentBriefQuestionIndex
+                          ? "w-3 bg-primary/50"
+                          : "w-3 bg-muted"
+                    }`}
+                    aria-label={`Show question ${index + 1}`}
+                  />
+                ))}
               </div>
 
               <div className="relative mt-7 flex items-center justify-center">
@@ -1294,7 +1279,7 @@ export default function Onboarding() {
                 type="button"
                 onClick={listening ? stopListening : startListening}
                 aria-label={listening ? "Stop recording business details" : "Start recording business details"}
-                className={`mt-7 flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-foreground/90 shadow-[0_16px_38px_-22px_rgba(15,23,42,0.6)] transition-all duration-300 ${
+                className={`mt-6 flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-foreground/90 shadow-[0_16px_38px_-22px_rgba(15,23,42,0.6)] transition-all duration-300 ${
                   listening
                     ? "bg-red-500 text-white ring-8 ring-red-500/10 hover:bg-red-600"
                     : "bg-primary text-primary-foreground ring-8 ring-primary/15 hover:scale-[1.03] hover:bg-primary/90"
@@ -1304,15 +1289,12 @@ export default function Onboarding() {
               </button>
 
               <p className="mt-3 text-xs font-medium text-foreground/80">
-                {listening ? "Listening... answer the 5 questions out loud" : "Tap the mic to answer out loud"}
-              </p>
-              <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-                You can pause and tap again if you need more time. Yeti combines this with the website scan.
+                {listening ? "Listening..." : voiceStarted ? "Tap again for the next answer" : "Tap the mic to answer"}
               </p>
 
               {!speechSupported && (
-                <div className="mt-8 text-sm text-amber-700">
-                  Your browser does not support live speech recognition. Type the business details below instead.
+                <div className="mt-4 max-w-sm text-sm text-amber-700">
+                  Your browser does not support live speech recognition. Try Chrome, Edge, or Safari with microphone access.
                 </div>
               )}
 
@@ -1329,7 +1311,26 @@ export default function Onboarding() {
                 </div>
               )}
 
-              <div className="mt-6 flex w-full gap-3">
+              <div className="mt-5 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentBriefQuestionIndex((current) => Math.max(current - 1, 0))}
+                  disabled={currentBriefQuestionIndex === 0}
+                  className="rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold text-muted-foreground transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Back question
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentBriefQuestionIndex((current) => Math.min(current + 1, briefQuestions.length - 1))}
+                  disabled={currentBriefQuestionIndex === briefQuestions.length - 1}
+                  className="rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold text-muted-foreground transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Skip
+                </button>
+              </div>
+
+              <div className="mt-5 flex w-full gap-3">
                 <button
                   onClick={() => {
                     stopListening();
