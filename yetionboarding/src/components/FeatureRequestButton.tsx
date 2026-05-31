@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Keyboard, Mic, Send, Sparkles, Square, X } from "lucide-react";
+import { Check, Keyboard, Mail, Mic, Sparkles, Square, X } from "lucide-react";
 
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
@@ -29,9 +29,7 @@ export function FeatureRequestButton() {
   const [message, setMessage] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
-  const [accessToken, setAccessToken] = useState("");
   const [listening, setListening] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -46,7 +44,6 @@ export function FeatureRequestButton() {
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       const session = data.session;
-      setAccessToken(session?.access_token || "");
       setAccountEmail(session?.user?.email || "");
       setContactEmail((current) => current || session?.user?.email || "");
     });
@@ -91,7 +88,7 @@ export function FeatureRequestButton() {
     setListening(true);
   };
 
-  const submit = async () => {
+  const submit = () => {
     const cleanMessage = message.trim();
     const cleanEmail = (accountEmail || contactEmail).trim();
     if (cleanMessage.length < 5) {
@@ -103,34 +100,27 @@ export function FeatureRequestButton() {
       return;
     }
 
-    setSubmitting(true);
     setError("");
     stopListening();
 
-    try {
-      const response = await fetch("/api/feature-request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          message: cleanMessage,
-          accountEmail,
-          contactEmail,
-          inputMode: mode,
-          pageUrl: window.location.href,
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Could not send feature request.");
-      setSent(true);
-      setMessage("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send feature request.");
-    } finally {
-      setSubmitting(false);
-    }
+    const subject = encodeURIComponent(`Yeti feature request from ${cleanEmail}`);
+    const body = encodeURIComponent(
+      [
+        "New Yeti feature request",
+        "",
+        `Account email: ${accountEmail || "Not signed in"}`,
+        `Reply email: ${cleanEmail}`,
+        `Input mode: ${mode}`,
+        `Page: ${window.location.href}`,
+        "",
+        "Request:",
+        cleanMessage,
+      ].join("\n"),
+    );
+
+    window.location.href = `mailto:aroozka@gmail.com?subject=${subject}&body=${body}`;
+    setSent(true);
+    setMessage("");
   };
 
   return (
@@ -172,7 +162,7 @@ export function FeatureRequestButton() {
                   Feature request sent
                 </h2>
                 <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-                  Thanks. We included your email so we can message you when it ships.
+                  Your email app opened with everything filled in. Send it there so we can reply when it ships.
                 </p>
                 <button
                   type="button"
@@ -194,7 +184,7 @@ export function FeatureRequestButton() {
                   What should we add or change?
                 </h2>
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                  Use the mic or type your idea. We will email you when we build it.
+                  Use the mic or type your idea. We will open your email app with everything ready.
                 </p>
 
                 <div className="mt-5 grid grid-cols-2 gap-2 rounded-full bg-muted p-1">
@@ -268,11 +258,10 @@ export function FeatureRequestButton() {
                 <button
                   type="button"
                   onClick={submit}
-                  disabled={submitting}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-black text-primary-foreground shadow-lg shadow-primary/20 transition hover:bg-primary/90"
                 >
-                  <Send className="h-4 w-4" />
-                  {submitting ? "Sending..." : "Send feature request"}
+                  <Mail className="h-4 w-4" />
+                  Open email to send
                 </button>
               </>
             )}

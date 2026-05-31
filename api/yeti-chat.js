@@ -230,7 +230,7 @@ async function enforceQuestionCredits(yetiId) {
   if (!ownerEmail) return "This Yeti is not on an active plan yet.";
 
   const subscription = await getSubscriptionForEmail(ownerEmail);
-  const activeStatuses = new Set(["active", "trialing"]);
+  const activeStatuses = new Set(["active", "trialing", "past_due"]);
   const planLimit =
     subscription && activeStatuses.has(subscription.status)
       ? Number(subscription.questions_limit || 0)
