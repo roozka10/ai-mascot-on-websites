@@ -105,8 +105,14 @@ async function getSubscriptionFromSupabase(email) {
   }
 }
 
-async function stripeRequest(path) {
-  const response = await fetch(`https://api.stripe.com/v1${path}`, {
+function stripePath(path, params = {}) {
+  const search = new URLSearchParams(params);
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
+}
+
+async function stripeRequest(path, params) {
+  const response = await fetch(`https://api.stripe.com/v1${stripePath(path, params)}`, {
     headers: {
       Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
       "Stripe-Version": "2026-04-22.dahlia",
@@ -124,36 +130,53 @@ async function getSubscriptionFromStripe(email) {
   if (!process.env.STRIPE_SECRET_KEY) return null;
 
   try {
-    const customers = await stripeRequest(
-      `/customers?email=${encodeURIComponent(email)}&limit=1`,
-    );
-    const customer = customers.data?.[0];
-    if (!customer?.id) return null;
+    const customers = await stripeRequest("/customers", {
+      email,
+      limit: "100",
+    });
+    const matchingCustomers = Array.isArray(customers.data) ? customers.data : [];
+    if (!matchingCustomers.length) return null;
 
-    const subscriptions = await stripeRequest(
-      `/subscriptions?customer=${encodeURIComponent(customer.id)}&status=all&limit=3&expand[]=data.items.data.price.product`,
-    );
+    let matchedCustomer = null;
+    let matchedSubscription = null;
 
-    const subscription =
-      subscriptions.data?.find((item) =>
-        ["active", "trialing", "past_due"].includes(item.status),
-      ) || subscriptions.data?.[0];
+    for (const customer of matchingCustomers) {
+      if (!customer?.id) continue;
 
-    if (!subscription?.id) return null;
+      const subscriptions = await stripeRequest("/subscriptions", {
+        customer: customer.id,
+        status: "all",
+        limit: "100",
+        "expand[]": "data.items.data.price.product",
+      });
 
-    const metadataPlan = subscription.metadata?.plan;
+      const subscription =
+        subscriptions.data?.find((item) =>
+          ["active", "trialing", "past_due"].includes(item.status),
+        ) || subscriptions.data?.[0];
+
+      if (subscription?.id) {
+        matchedCustomer = customer;
+        matchedSubscription = subscription;
+        break;
+      }
+    }
+
+    if (!matchedSubscription?.id || !matchedCustomer?.id) return null;
+
+    const metadataPlan = matchedSubscription.metadata?.plan;
     const productName =
-      subscription.items?.data?.[0]?.price?.product?.name ||
-      subscription.items?.data?.[0]?.plan?.nickname ||
+      matchedSubscription.items?.data?.[0]?.price?.product?.name ||
+      matchedSubscription.items?.data?.[0]?.price?.nickname ||
       "";
     const plan = metadataPlan || planFromLabel(productName) || "starter";
 
     const record = buildSubscriptionRecord({
-      stripeSubscriptionId: subscription.id,
-      stripeCustomerId: customer.id,
+      stripeSubscriptionId: matchedSubscription.id,
+      stripeCustomerId: matchedCustomer.id,
       email,
       plan,
-      status: subscription.status,
+      status: matchedSubscription.status,
     });
 
     await saveSubscription(record);
