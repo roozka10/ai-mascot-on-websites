@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import Onboarding from "@/components/Onboarding";
 import { PricingSection } from "@/components/PricingSection";
+import { FeatureRequestButton } from "@/components/FeatureRequestButton";
 import mainMascot from "@/assets/mainmascot.png";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       {path.startsWith("/pricing") ? <PricingPage /> : <Onboarding />}
+      <FeatureRequestButton />
     </QueryClientProvider>
   );
 }
