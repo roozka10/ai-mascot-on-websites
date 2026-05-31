@@ -169,6 +169,42 @@ function StepShell({ step, children }: { step: number; children: React.ReactNode
   );
 }
 
+function QuestionLoadingGame({ message }: { message: string }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)]">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+          Yeti is learning
+        </p>
+        <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground">
+          Building your questions
+        </h2>
+        <div className="relative mx-auto mt-5 h-36 max-w-[280px] overflow-hidden rounded-3xl bg-[linear-gradient(180deg,#f8f7ff,#ffffff)]">
+          <div className="absolute bottom-9 left-0 right-0 h-[3px] bg-foreground/80" />
+          <img
+            src={yeti}
+            alt="Yeti mascot"
+            className="absolute bottom-10 left-7 h-16 w-16 animate-bounce object-contain drop-shadow-lg"
+          />
+          {[0, 1, 2].map((item) => (
+            <span
+              key={item}
+              className="absolute bottom-10 h-7 w-5 rounded-md bg-primary/85 shadow-sm"
+              style={{ right: `${28 + item * 58}px` }}
+            />
+          ))}
+        </div>
+        <p className="mt-4 text-sm font-bold text-foreground">
+          {message || "Checking your website..."}
+        </p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          This can take a few seconds while Yeti reads the site.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ——— CORS proxy with fallbacks ———
 async function fetchViaProxy(url: string): Promise<string | null> {
   const proxies = [
@@ -793,6 +829,14 @@ export default function Onboarding() {
   const currentBriefQuestion =
     briefQuestions[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[0];
   const currentBriefAnswer = briefAnswers[currentBriefQuestionIndex] || "";
+  const isGeneratingQuestions = loading && statusText.toLowerCase().includes("questions");
+  const goToNextBriefQuestion = () => {
+    if (currentBriefQuestionIndex < briefQuestions.length - 1) {
+      setCurrentBriefQuestionIndex((current) => current + 1);
+      return;
+    }
+    setStep(2);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1351,20 +1395,16 @@ export default function Onboarding() {
             <Stepper step={step} />
 
             <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-center text-center">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-                Personalized from your website
-              </p>
-              <p className="mt-2 text-xs font-bold text-muted-foreground">
-                Question {currentBriefQuestionIndex + 1} of {briefQuestions.length}
-              </p>
-              <h1 className="mt-3 max-w-xl text-balance text-2xl font-black leading-tight tracking-[-0.05em] text-foreground sm:text-3xl">
-                {currentBriefQuestion}
-              </h1>
-              <p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">
-                Tap the mic to answer. It moves to the next question when you stop talking.
-              </p>
+              <div className="w-full rounded-full border border-border/60 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+                  {currentBriefQuestionIndex + 1}/{briefQuestions.length}
+                </p>
+                <h1 className="mt-1 truncate text-base font-black tracking-[-0.03em] text-foreground sm:text-lg">
+                  {currentBriefQuestion}
+                </h1>
+              </div>
 
-              <div className="mt-5 flex items-center justify-center gap-1.5">
+              <div className="mt-4 flex items-center justify-center gap-1.5">
                 {briefQuestions.map((question, index) => (
                   <button
                     key={question}
@@ -1382,12 +1422,12 @@ export default function Onboarding() {
                 ))}
               </div>
 
-              <div className="relative mt-5 flex items-center justify-center">
+              <div className="relative mt-7 flex items-center justify-center">
                 <div className="absolute h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
                 <img
                   src={yeti}
                   alt="Yeti mascot"
-                  className="relative z-10 w-[120px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[150px]"
+                  className="relative z-10 w-[132px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[160px]"
                 />
               </div>
 
@@ -1407,7 +1447,7 @@ export default function Onboarding() {
               </button>
 
               <p className="mt-3 text-xs font-medium text-foreground/80">
-                {listening ? "Listening..." : voiceStarted ? "Tap again for the next answer" : "Tap the mic to answer"}
+                {listening ? "Listening..." : "Tap the mic to answer"}
               </p>
               {currentBriefAnswer && (
                 <p className="mt-1 max-w-md truncate text-xs font-semibold text-primary">
@@ -1446,11 +1486,11 @@ export default function Onboarding() {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button
-                  onClick={() => setStep(2)}
+                  onClick={goToNextBriefQuestion}
                   disabled={loading}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground font-medium py-3 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                 >
-                  Continue
+                  {currentBriefQuestionIndex === briefQuestions.length - 1 ? "Review answers" : "Continue"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -1523,6 +1563,7 @@ export default function Onboarding() {
                 {loading ? "Checking plan..." : "Continue"}
                 {!loading && <ArrowRight className="h-4 w-4" />}
               </button>
+              {isGeneratingQuestions && <QuestionLoadingGame message={statusText} />}
             </StepShell>
           )}
 
