@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 
 type PricingSectionProps = {
-  onStart?: () => void;
   standalone?: boolean;
 };
 
 const plans = [
   {
+    id: "starter",
     name: "Starter",
     price: 9,
     websites: 3,
@@ -22,6 +22,7 @@ const plans = [
     ],
   },
   {
+    id: "growth",
     name: "Growth",
     price: 19,
     websites: 10,
@@ -37,6 +38,7 @@ const plans = [
     featured: true,
   },
   {
+    id: "agency",
     name: "Agency",
     price: 49,
     websites: 50,
@@ -56,16 +58,42 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-export function PricingSection({ onStart, standalone = false }: PricingSectionProps) {
+export function PricingSection({ standalone = false }: PricingSectionProps) {
   const [websites, setWebsites] = useState(3);
   const [questions, setQuestions] = useState(1000);
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const recommendedPlan = useMemo(() => {
     return plans.find((plan) => websites <= plan.websites && questions <= plan.questions) ?? plans[plans.length - 1];
   }, [questions, websites]);
 
   const yearlyPrice = (price: number) => Math.round((price * 10) / 12);
+
+  async function startCheckout(planId: string) {
+    setCheckoutError("");
+    setLoadingPlan(planId);
+
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId, billing }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.error || "Could not start Stripe checkout.");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "Could not start Stripe checkout.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
 
   return (
     <section id="pricing" className={standalone ? "px-5 py-16 sm:py-20" : "mx-auto w-full max-w-6xl px-5 py-16"}>
@@ -146,6 +174,11 @@ export function PricingSection({ onStart, standalone = false }: PricingSectionPr
             <span className="font-black text-white">{recommendedPlan.name}</span>
             {" "}for {websites} website{websites === 1 ? "" : "s"} and {formatNumber(questions)} questions/month.
           </div>
+          {checkoutError && (
+            <div className="mt-3 rounded-2xl border border-red-300/30 bg-red-500/12 px-4 py-3 text-sm font-bold text-red-100">
+              {checkoutError}
+            </div>
+          )}
         </div>
 
         <div className="mt-7 grid gap-5 lg:grid-cols-3">
@@ -182,24 +215,15 @@ export function PricingSection({ onStart, standalone = false }: PricingSectionPr
                     </div>
                   ))}
                 </div>
-                {onStart ? (
-                  <button
-                    type="button"
-                    onClick={onStart}
-                    className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    Start 7-day free trial
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <a
-                    href="/"
-                    className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    Start 7-day free trial
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                )}
+                <button
+                  type="button"
+                  onClick={() => startCheckout(plan.id)}
+                  disabled={loadingPlan !== null}
+                  className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+                >
+                  {loadingPlan === plan.id ? "Opening Stripe..." : "Start 7-day free trial"}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
                 <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">$0 due today. No card required.</p>
               </article>
             );

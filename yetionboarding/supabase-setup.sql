@@ -59,6 +59,29 @@ create index if not exists idx_yeti_faq_answers_yeti_id
 create index if not exists idx_yeti_faq_answers_question_trgm
   on public.yeti_faq_answers using gin (normalized_question gin_trgm_ops);
 
+-- Stripe subscription records written by /api/stripe-webhook.
+create table if not exists public.yeti_subscriptions (
+  id bigint generated always as identity primary key,
+  stripe_customer_id text,
+  stripe_subscription_id text unique not null,
+  stripe_checkout_session_id text,
+  user_email text,
+  plan text,
+  billing_interval text,
+  status text,
+  websites_limit integer,
+  questions_limit integer,
+  current_period_end timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_yeti_subscriptions_customer_id
+  on public.yeti_subscriptions (stripe_customer_id);
+
+create index if not exists idx_yeti_subscriptions_user_email
+  on public.yeti_subscriptions (user_email);
+
 -- -----------------------------------------------------------------------------
 -- 3. Row Level Security (RLS)
 -- -----------------------------------------------------------------------------
@@ -72,6 +95,7 @@ drop policy if exists "Authenticated insert yeti configs" on public.yeti_configs
 drop policy if exists "Users update own yeti configs" on public.yeti_configs;
 drop policy if exists "Users delete own yeti configs" on public.yeti_configs;
 drop policy if exists "Service can manage Yeti FAQ answers" on public.yeti_faq_answers;
+drop policy if exists "Service can manage Yeti subscriptions" on public.yeti_subscriptions;
 
 -- Widget + embed: read any config by yeti_id (anon key)
 create policy "Public read yeti configs"
@@ -104,6 +128,15 @@ alter table public.yeti_faq_answers enable row level security;
 
 create policy "Service can manage Yeti FAQ answers"
   on public.yeti_faq_answers
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+alter table public.yeti_subscriptions enable row level security;
+
+create policy "Service can manage Yeti subscriptions"
+  on public.yeti_subscriptions
   for all
   to service_role
   using (true)
@@ -250,6 +283,7 @@ $$;
 grant usage on schema public to anon, authenticated;
 grant select on public.yeti_configs to anon, authenticated;
 grant insert, update, delete on public.yeti_configs to authenticated;
+grant all on public.yeti_subscriptions to service_role;
 grant execute on function public.match_yeti_faq(text, text, real) to service_role;
 grant execute on function public.upsert_yeti_faq(text, text, text) to service_role;
 

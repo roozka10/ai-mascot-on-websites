@@ -451,27 +451,134 @@ function OnboardingNav({
 
 function AccountPage({
   email,
+  accessToken,
   onLogout,
 }: {
   email?: string;
+  accessToken?: string;
   onLogout: () => void;
 }) {
+  const [subscription, setSubscription] = useState<{
+    plan: string | null;
+    billing_interval: string | null;
+    status: string | null;
+    websites_limit: number | null;
+    questions_limit: number | null;
+    current_period_end: string | null;
+  } | null>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [subscriptionError, setSubscriptionError] = useState("");
+
+  useEffect(() => {
+    if (!accessToken) {
+      setSubscriptionLoading(false);
+      return;
+    }
+
+    let active = true;
+    setSubscriptionLoading(true);
+    setSubscriptionError("");
+
+    void fetch("/api/account-subscription", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data?.error || "Could not load your plan.");
+        if (active) setSubscription(data.subscription || null);
+      })
+      .catch((error) => {
+        if (active) setSubscriptionError(error instanceof Error ? error.message : "Could not load your plan.");
+      })
+      .finally(() => {
+        if (active) setSubscriptionLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  const planName = subscription?.plan
+    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
+    : "No paid plan yet";
+  const status = subscription?.status || "Not active";
+  const billing = subscription?.billing_interval
+    ? `${subscription.billing_interval.charAt(0).toUpperCase()}${subscription.billing_interval.slice(1)} billing`
+    : "Choose a plan to start";
+  const renewsAt = subscription?.current_period_end
+    ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
+        new Date(subscription.current_period_end),
+      )
+    : null;
+
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
-      <section className="w-full max-w-md rounded-[2rem] border border-border/60 bg-white p-7 text-center shadow-[0_24px_80px_-46px_rgba(15,23,42,0.48)]">
+      <section className="w-full max-w-3xl rounded-[2rem] border border-border/60 bg-white p-7 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.48)]">
         <Mascot size={76} />
-        <p className="mt-6 text-xs font-black uppercase tracking-[0.2em] text-primary">
+        <p className="mt-6 text-center text-xs font-black uppercase tracking-[0.2em] text-primary">
           Account
         </p>
-        <h1 className="mt-3 text-3xl font-black tracking-[-0.05em] text-foreground">
+        <h1 className="mt-3 text-center text-3xl font-black tracking-[-0.05em] text-foreground">
           Your Yeti workspace
         </h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        <p className="mt-3 text-center text-sm leading-6 text-muted-foreground">
           Signed in as
         </p>
-        <p className="mt-2 rounded-2xl bg-muted px-4 py-3 text-sm font-bold text-foreground">
+        <p className="mx-auto mt-2 max-w-md rounded-2xl bg-muted px-4 py-3 text-center text-sm font-bold text-foreground">
           {email || "Unknown email"}
         </p>
+
+        <div className="mt-7 rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Current plan</p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-foreground">
+                {subscriptionLoading ? "Loading..." : planName}
+              </h2>
+              <p className="mt-1 text-sm font-bold text-muted-foreground">{subscriptionLoading ? "Checking Stripe..." : billing}</p>
+            </div>
+            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-primary">
+              {subscriptionLoading ? "Checking" : status.replace(/_/g, " ")}
+            </span>
+          </div>
+
+          {subscriptionError && (
+            <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+              {subscriptionError}
+            </p>
+          )}
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
+              <p className="mt-2 text-2xl font-black text-foreground">
+                {subscription?.websites_limit ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Questions/mo</p>
+              <p className="mt-2 text-2xl font-black text-foreground">
+                {subscription?.questions_limit?.toLocaleString() ?? "-"}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white px-4 py-4 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Renews</p>
+              <p className="mt-2 text-lg font-black text-foreground">
+                {renewsAt || "-"}
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="/pricing"
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
+          >
+            View pricing and upgrade
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        </div>
+
         <button
           type="button"
           onClick={onLogout}
@@ -509,6 +616,14 @@ export default function Onboarding() {
 
   const canContinue = name.trim().length > 0 && site.trim().length > 0;
   const liveTranscript = `${transcript}${transcript && interimTranscript ? " " : ""}${interimTranscript}`;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success" || params.get("start") === "setup") {
+      setShowLogin(true);
+      setView("setup");
+    }
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -771,7 +886,7 @@ export default function Onboarding() {
     return (
       <>
         {nav}
-        <AccountPage email={email} onLogout={logout} />
+        <AccountPage email={email} accessToken={session.access_token} onLogout={logout} />
       </>
     );
   }

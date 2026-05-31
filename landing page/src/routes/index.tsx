@@ -5,20 +5,13 @@ import yeti from "@/assets/yeti-mascot.png";
 import { useState } from "react";
 import {
   ArrowRight,
-  BotOff,
   Check,
   ChevronRight,
   Code2,
-  Keyboard,
   Menu,
-  MessageSquareText,
-  Mic,
   ScanSearch,
-  Smile,
-  Volume2,
   WandSparkles,
   X,
-  Zap,
 } from "lucide-react";
 
 const heroVideoUrl =
@@ -45,36 +38,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-const problems = [
-  {
-    Icon: MessageSquareText,
-    title: "Interview Before Answers",
-    body: "You just want to know the return policy. They need your name, email, and the reason for your visit first.",
-  },
-  {
-    Icon: BotOff,
-    title: "Nobody Asked for an Essay",
-    body: "You asked one question. It responded with six paragraphs, three bullet points, and a disclaimer.",
-  },
-  {
-    Icon: Smile,
-    title: "Corner Haunter",
-    body: "It hides in the bottom-right corner of every page waiting to jump out and ask if you need help. You always say no.",
-  },
-  {
-    Icon: Keyboard,
-    title: "Typing Feels Like Homework",
-    body: "It's 2026. You shouldn't have to type a paragraph to get a 5-second answer.",
-  },
-];
-
-const features = [
-  { Icon: Zap, title: "Voice is faster", body: "People speak faster than they type. Less friction means visitors get unstuck sooner." },
-  { Icon: Mic, title: "Ask like a human", body: "No exact search phrase. No magic command. Visitors just ask out loud." },
-  { Icon: Volume2, title: "Short spoken replies", body: "Yeti answers like a helpful guide, not a PDF wearing sunglasses." },
-  { Icon: Smile, title: "Less effort, more trust", body: "A friendly voice feels easier than another corporate chatbot box." },
-];
 
 const steps = [
   { n: 1, Icon: ScanSearch, title: "Paste your website", body: "Yeti scans important pages and turns your site into a compact knowledge base." },
@@ -245,116 +208,43 @@ function Index() {
       <VideoHero />
 
       <div className="cloud-section-bg">
-      <section id="how" className="py-20 lg:py-28 bg-gradient-to-b from-background to-secondary/25">
+      <section id="how" className="py-24 lg:py-32">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="reveal max-w-3xl">
-            <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
-              Three steps. No support-bot ceremony.
-            </h2>
-            <p className="mt-5 text-lg text-muted-foreground max-w-2xl">
-              Yeti is made to install fast, learn fast, and start helping without a 19-step onboarding ritual.
-            </p>
-          </div>
-
-          <div className="mt-14 grid lg:grid-cols-3 gap-6">
-            {steps.map((step) => (
-              <div key={step.title} className="reveal rounded-[28px] border border-border/70 bg-white/70 p-7 shadow-soft card-lift">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-glow">
-                  <step.Icon size={25} />
-                </div>
-                <p className="mt-6 text-sm font-extrabold text-primary">Step {step.n}</p>
-                <h3 className="mt-2 text-2xl font-black tracking-tight">{step.title}</h3>
-                <p className="mt-3 text-muted-foreground leading-relaxed">{step.body}</p>
+          <div
+            className="reveal overflow-hidden rounded-[32px] p-7 text-white shadow-lift md:p-10"
+            style={{
+              background:
+                "linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 28%, var(--color-dark-surface)), var(--color-dark-surface-2))",
+            }}
+          >
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p className="inline-flex rounded-full bg-white/12 px-4 py-2 text-sm font-bold uppercase tracking-[0.2em] text-secondary">
+                  How it works
+                </p>
+                <h2 className="mt-5 font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
+                  Three steps. No support-bot ceremony.
+                </h2>
+                <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/65">
+                  Yeti is made to install fast, learn fast, and start helping without a 19-step onboarding ritual.
+                </p>
               </div>
-            ))}
-          </div>
-
-          <div className="reveal mt-10 rounded-[2rem] bg-dark-surface p-6 text-white shadow-lift md:p-8">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-secondary">Agent install prompt</p>
-            <p className="mt-3 text-lg font-semibold">
-              "Add this Yeti Guide script to my website footer before the closing body tag."
-            </p>
-            <p className="mt-3 text-white/60">
-              Works great with Cursor, Claude Code, Codex, or the friend who says "send me the repo."
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="problem" className="py-24 lg:py-32">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="reveal max-w-3xl">
-            <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
-              Chatbots are exhausting.{" "}
-              <span className="text-muted-foreground">(Everyone knows it. Nobody says it.)</span>
-            </h2>
-            <p className="mt-5 text-lg text-muted-foreground max-w-2xl">
-              Nobody woke up excited to type into a tiny popup in the corner of a website. We didn't either.
-            </p>
-          </div>
-
-          <div className="mt-14 grid sm:grid-cols-2 gap-6">
-            {problems.map((p, i) => {
-              const tints = [
-                "var(--color-primary)",
-                "var(--color-accent)",
-                "var(--color-secondary)",
-              ];
-              const tint = tints[i % tints.length];
-              return (
-                <div
-                  key={p.title}
-                  className="reveal group rounded-[28px] p-2 card-lift"
-                  style={{ background: "var(--color-dark-surface)" }}
-                >
-                  <div
-                    className="rounded-[22px] aspect-[16/10] grid place-items-center relative overflow-hidden"
-                    style={{
-                      background: `linear-gradient(135deg, color-mix(in oklab, ${tint} 22%, var(--color-dark-surface-2)), var(--color-dark-surface-2))`,
-                    }}
-                  >
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 opacity-70"
-                      style={{
-                        background: `radial-gradient(55% 55% at 50% 50%, color-mix(in oklab, ${tint} 30%, transparent), transparent 70%)`,
-                      }}
-                    />
-                    <p.Icon className="relative h-14 w-14 text-white drop-shadow-lg transition-transform duration-300 group-hover:scale-110" strokeWidth={2.2} />
-                  </div>
-                  <div className="px-6 pt-6 pb-7">
-                    <h3 className="text-xl font-bold text-white">{p.title}</h3>
-                    <p className="mt-3 text-white/60 leading-relaxed">{p.body}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-
-      <section id="voice" className="py-24 lg:py-32 bg-gradient-to-b from-background to-secondary/20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="reveal max-w-3xl">
-            <h2 className="font-display text-4xl md:text-5xl font-black tracking-tight text-balance">
-              Talking is the original user interface.
-            </h2>
-            <p className="mt-5 text-lg text-muted-foreground">
-              People have been talking for a very long time. Typing into chatbot jail is the weird part.
-            </p>
-          </div>
-
-          <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f) => (
-              <div key={f.title} className="reveal rounded-[28px] border border-border/70 bg-white/70 p-6 shadow-soft card-lift">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-                  <f.Icon size={23} />
-                </div>
-                <h3 className="mt-5 text-lg font-black">{f.title}</h3>
-                <p className="mt-2 text-muted-foreground leading-relaxed">{f.body}</p>
+              <div className="space-y-4">
+                {steps.map((step) => (
+                  <article key={step.title} className="rounded-[24px] border border-white/12 bg-white/[0.08] p-5">
+                    <div className="flex items-start gap-4">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-secondary text-sm font-black text-dark-surface shadow-glow">
+                        {step.n}
+                      </span>
+                      <div>
+                        <h3 className="text-xl font-black tracking-tight">{step.title}</h3>
+                        <p className="mt-1 text-white/65 leading-relaxed">{step.body}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>
