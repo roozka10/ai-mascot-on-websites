@@ -52,73 +52,6 @@
       width: min(500px, calc(100vw - 32px));
     }
 
-    /* ——— Speech bubble ——— */
-    .yeti-bubble {
-      background: #ffffff;
-      border: 2.5px solid #1d1d1f;
-      border-radius: 18px;
-      padding: 12px 18px;
-      max-width: 240px;
-      overflow-wrap: break-word;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      color: #1d1d1f;
-      text-align: center;
-      line-height: 1.4;
-      margin-bottom: 8px;
-      position: relative;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-      opacity: 0;
-      transform: translateY(8px) scale(0.95);
-      animation: bubbleIn 0.5s 0.6s forwards;
-    }
-    body.yeti-demo-large .yeti-bubble {
-      max-width: min(485px, calc(100vw - 40px));
-      padding: 24px 34px;
-      border-radius: 30px;
-      font-size: 28px;
-      line-height: 1.25;
-      margin-bottom: 18px;
-      box-shadow: 0 20px 46px rgba(15,23,42,0.12);
-    }
-    body.yeti-demo-large .yeti-bubble::after {
-      bottom: -20px;
-      border-left-width: 20px;
-      border-right-width: 20px;
-      border-top-width: 20px;
-    }
-    body.yeti-demo-large .yeti-bubble::before {
-      bottom: -24px;
-      border-left-width: 22px;
-      border-right-width: 22px;
-      border-top-width: 22px;
-    }
-    /* Bubble tail */
-    .yeti-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 10px solid #ffffff;
-      filter: drop-shadow(0 2px 1px rgba(0,0,0,0.06));
-    }
-    .yeti-bubble::before {
-      content: '';
-      position: absolute;
-      bottom: -13px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 11px solid transparent;
-      border-right: 11px solid transparent;
-      border-top: 11px solid #1d1d1f;
-    }
-
     /* ——— Character image area ——— */
     .yeti-character {
       position: relative;
@@ -180,6 +113,22 @@
       width: 38px;
       height: 38px;
     }
+    .yeti-mic-hint {
+      display: none;
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #e74c3c;
+      text-align: center;
+    }
+    body.yeti-demo-large .yeti-mic-hint {
+      margin-top: 12px;
+      font-size: 15px;
+    }
+    .yeti-state-listening .yeti-mic-hint {
+      display: block;
+    }
     .yeti-mic-btn:hover {
       transform: scale(1.1);
       background: #6858d4;
@@ -225,27 +174,6 @@
       animation: yetiFloat 3s ease-in-out infinite;
     }
 
-    /* Listening bubble — clean transcription style */
-    .yeti-state-listening .yeti-bubble {
-      text-align: left;
-      font-weight: 500;
-      color: #333;
-      min-height: 40px;
-    }
-    .yeti-bubble .blink-cursor {
-      display: inline-block;
-      width: 2px;
-      height: 14px;
-      background: #7b6fe6;
-      margin-left: 3px;
-      vertical-align: text-bottom;
-      animation: cursorBlink 0.8s step-end infinite;
-    }
-    @keyframes cursorBlink {
-      0%, 100% { opacity: 1; }
-      50%      { opacity: 0; }
-    }
-
     /* LISTENING — same float as idle, no extra movement */
     .yeti-state-listening .yeti-character {
       animation: yetiFloat 3s ease-in-out infinite;
@@ -268,23 +196,6 @@
       display: block;
     }
 
-    /* TALKING — wider readable answer card */
-    .yeti-state-talking .yeti-bubble {
-      width: min(430px, calc(100vw - 44px));
-      max-width: min(430px, calc(100vw - 44px));
-      max-height: 150px;
-      overflow-y: auto;
-      padding: 14px 18px 14px 20px;
-      text-align: left;
-      font-size: 14px;
-      font-weight: 650;
-      line-height: 1.45;
-      opacity: 1 !important;
-      transform: translateY(0) scale(1);
-    }
-    #yeti-widget.yeti-state-talking {
-      right: 110px;
-    }
     .yeti-state-talking .yeti-character {
       animation: yetiBounce 0.45s ease-in-out infinite;
     }
@@ -295,10 +206,6 @@
     @keyframes yetiEntrance {
       0%   { opacity: 0; transform: translateY(40px) scale(0.7); }
       60%  { opacity: 1; transform: translateY(-6px) scale(1.03); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    @keyframes bubbleIn {
-      0%   { opacity: 0; transform: translateY(8px) scale(0.95); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes yetiFloat {
@@ -333,13 +240,8 @@
 
   <!-- ====== YETI WIDGET ====== -->
   <div id="yeti-widget" class="yeti-state-idle">
-    <!-- Inner column — keeps bubble, character, mic lined up center -->
+    <!-- Inner column — keeps character and mic lined up center -->
     <div class="yeti-inner">
-      <!-- Speech bubble -->
-      <div class="yeti-bubble">
-        Yo, need help finding something? I got you! 🤙
-      </div>
-
       <!-- Character -->
       <div class="yeti-character">
         <img class="yeti-img-idle" src="/mainmascot.png" alt="Yeti Guide" />
@@ -356,6 +258,7 @@
           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
         </svg>
       </button>
+      <div class="yeti-mic-hint">Click to stop</div>
     </div>
   </div>
 
@@ -365,13 +268,15 @@
     const isDemoPreview = params.get('preview') === '1';
     const isDemoLarge = params.get('large') === '1';
     const demoStorageKey = 'yeti-guide-landing-demo-used';
+    if (isDemoPreview) {
+      document.body.classList.add('yeti-demo-preview');
+    }
     if (isDemoLarge) {
       document.body.classList.add('yeti-demo-large');
     }
 
     // ——— DOM refs ———
     const widget = document.getElementById('yeti-widget');
-    const bubble = widget.querySelector('.yeti-bubble');
     const micBtn = widget.querySelector('.yeti-mic-btn');
     const states = ['idle', 'listening', 'thinking', 'talking'];
 
@@ -480,19 +385,14 @@ Keep it one short, friendly, fun sentence.`;
       resizeFrameForState(state);
     }
 
-    function resizeFrameForState(state) {
+    function resizeFrameForState() {
       if (window.parent === window) return;
-      var isTalking = state === 'talking';
-      var width = isTalking ? Math.min(520, window.screen.width || 520) : 260;
-      var height = isTalking ? 390 : 360;
-      window.parent.postMessage({ type: 'yeti-resize', width: width, height: height }, '*');
+      window.parent.postMessage({ type: 'yeti-resize', width: 260, height: 260 }, '*');
     }
 
     resizeFrameForState('idle');
 
-    function setBubbleText(text) {
-      bubble.textContent = text;
-    }
+    function setBubbleText(_text) {}
 
     // ——— Parse guide commands from AI response ———
     function parseCommands(text) {
@@ -649,7 +549,6 @@ Keep it one short, friendly, fun sentence.`;
           }
         }
         lastTranscript = final || interim;
-        bubble.innerHTML = (final + interim) + '<span class="blink-cursor"></span>';
       };
 
       recognition.onend = () => {
@@ -703,7 +602,6 @@ Keep it one short, friendly, fun sentence.`;
       isListening = true;
       lastTranscript = '';
       setYetiState('listening');
-      bubble.innerHTML = '<span class="blink-cursor"></span>';
       try {
         recognition.start();
       } catch (e) {
