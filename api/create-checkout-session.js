@@ -22,8 +22,28 @@ const PLANS = {
   },
 };
 
-function setCors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const { hostname } = new URL(origin);
+    return (
+      hostname === "www.yetiassistant.online" ||
+      hostname === "yetiassistant.online" ||
+      hostname.endsWith(".vercel.app") ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function setCors(req, res) {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
@@ -66,10 +86,10 @@ async function createStripeCheckoutSession(params) {
 }
 
 export default async function handler(req, res) {
-  setCors(res);
+  setCors(req, res);
 
   if (req.method === "OPTIONS") {
-    res.status(204).end();
+    res.status(isAllowedOrigin(req.headers.origin) ? 204 : 403).end();
     return;
   }
 
@@ -142,8 +162,7 @@ export default async function handler(req, res) {
     });
 
     res.status(200).json({ url: session.url });
-  } catch (error) {
-    console.error("[Stripe] Checkout failed", error);
-    res.status(500).json({ error: error instanceof Error ? error.message : "Stripe checkout failed" });
+  } catch {
+    res.status(500).json({ error: "Stripe checkout failed" });
   }
 }

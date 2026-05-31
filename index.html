@@ -289,13 +289,12 @@
     // ——— Private API config. Secrets stay in server environment variables. ———
     const API_BASE_URL = window.location.origin;
 
-    const DEFAULT_PROMPT = `You are Yeti, a helpful website guide. Be friendly and concise. Keep replies to one short sentence.`;
     const DEMO_PROMPT = `You are Yeti Guide's landing page demo.
 Answer ONLY questions about Yeti Guide itself: what it does, why voice is better, setup, website scanning, embed script, and the mission to replace annoying chatbots.
 If asked anything unrelated, politely say you can only explain Yeti Guide.
 Keep it one short, friendly, fun sentence.`;
 
-    let SYSTEM_PROMPT = DEFAULT_PROMPT;
+    let SYSTEM_PROMPT = DEMO_PROMPT;
     let chatHistory = [];
     let configReady = false;
     let businessName = '';
@@ -324,25 +323,22 @@ Keep it one short, friendly, fun sentence.`;
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          console.error('[Yeti] Config load failed:', res.status, data.error || 'unknown error');
           setBubbleText('Yeti could not load your setup yet. Check Vercel env vars for Supabase.');
           return;
         }
 
-        if (data?.prompt) {
-          SYSTEM_PROMPT = data.prompt;
+        if (data) {
           businessName = data.business_name || '';
-          console.log(`[Yeti] Loaded custom personality for "${businessName}"`);
           setBubbleText(
             businessName
               ? `Hey! I'm the guide for ${businessName}. Ask me anything about this site!`
               : 'Need help finding something? I can guide you.'
           );
         } else {
-          console.error('[Yeti] Config missing prompt for id:', yetiId);
+          setBubbleText('Yeti could not load your setup yet.');
         }
-      } catch (err) {
-        console.warn('[Yeti] Failed to load config:', err);
+      } catch {
+        setBubbleText('Yeti could not load your setup yet.');
       } finally {
         configReady = true;
       }
@@ -372,7 +368,6 @@ Keep it one short, friendly, fun sentence.`;
       if (!bestVoice && voices.length > 0) {
         bestVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
       }
-      if (bestVoice) console.log('[Yeti] Voice:', bestVoice.name);
     }
 
     speechSynthesis.onvoiceschanged = pickVoice;
@@ -394,27 +389,9 @@ Keep it one short, friendly, fun sentence.`;
 
     function setBubbleText(_text) {}
 
-    // ——— Parse guide commands from AI response ———
-    function parseCommands(text) {
-      const scrollMatch = text.match(/\[scroll:(#[\w-]+|\.[\w-]+)\]/);
-      const navigateMatch = text.match(/\[navigate:(\/[^\]]+)\]/);
-
-      let cleanText = text;
-      let command = null;
-
-      if (scrollMatch) {
-        command = { type: 'scroll', target: scrollMatch[1] };
-        cleanText = text.replace(scrollMatch[0], '').trim();
-      } else if (navigateMatch) {
-        command = { type: 'navigate', target: navigateMatch[1] };
-        cleanText = text.replace(navigateMatch[0], '').trim();
-      }
-
-      return { cleanText, command };
-    }
-
     function cleanSpeechText(text) {
       return text
+        .replace(/\[[^\]]+\]/g, '')
         .replace(/https?:\/\/(www\.)?/gi, '')
         .replace(/\bwww\./gi, '')
         .replace(/\b([a-z0-9-]+\.[a-z]{2,})(?:\/[^\s.,!?)]*)?/gi, '$1')
@@ -429,15 +406,7 @@ Keep it one short, friendly, fun sentence.`;
       speechSynthesis.cancel();
       isSpeaking = true;
 
-      // Parse commands
-      const { cleanText: parsedText, command } = parseCommands(text);
-      const cleanText = cleanSpeechText(parsedText);
-
-      // Send command to parent page
-      if (command && window.parent !== window) {
-        window.parent.postMessage({ type: 'yeti-guide', action: command }, '*');
-        console.log('[Yeti] Guide command:', command);
-      }
+      const cleanText = cleanSpeechText(text);
 
       setBubbleText(cleanText);
       setYetiState('talking');
@@ -458,14 +427,12 @@ Keep it one short, friendly, fun sentence.`;
         );
       };
 
-      utterance.onerror = (e) => {
-        console.error('[Yeti] Speech error:', e);
+      utterance.onerror = () => {
         isSpeaking = false;
         setYetiState('idle');
       };
 
       speechSynthesis.speak(utterance);
-      console.log('[Yeti] Speaking:', cleanText);
     }
     window.yetiSpeak = yetiSpeak;
 
@@ -506,19 +473,18 @@ Keep it one short, friendly, fun sentence.`;
       chatHistory.push({ role: 'user', content: userText });
       if (chatHistory.length > 3) chatHistory = chatHistory.slice(-3);
 
-      const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...chatHistory];
+      const messages = isDemo
+        ? [{ role: 'system', content: SYSTEM_PROMPT }, ...chatHistory]
+        : chatHistory;
 
       try {
-        console.log('[Yeti] Asking private API...');
         const reply = await askYetiApi(messages, userText);
         if (reply) {
-          console.log('[Yeti] Brain says:', reply);
           chatHistory.push({ role: 'assistant', content: reply });
           yetiSpeak(reply);
           return;
         }
-      } catch (e) {
-        console.log('[Yeti] Private API failed:', e.message);
+      } catch {
       }
 
       yetiSpeak("Oops, my brain froze! Try again in a sec!");
@@ -534,10 +500,6 @@ Keep it one short, friendly, fun sentence.`;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
-      recognition.onstart = () => {
-        console.log('[Yeti] Mic is active');
-      };
-
       recognition.onresult = (event) => {
         let interim = '';
         let final = '';
@@ -552,11 +514,8 @@ Keep it one short, friendly, fun sentence.`;
       };
 
       recognition.onend = () => {
-        console.log('[Yeti] Mic ended, got:', lastTranscript);
-
         // If user hasn't stopped manually and no text yet, keep listening
         if (isListening && !lastTranscript.trim()) {
-          console.log('[Yeti] No speech detected, restarting mic...');
           try { recognition.start(); } catch(e) {}
           return;
         }
@@ -565,7 +524,6 @@ Keep it one short, friendly, fun sentence.`;
 
         if (lastTranscript.trim()) {
           const finalText = lastTranscript.trim();
-          console.log('[Yeti] User said:', finalText);
           setYetiState('thinking');
           setBubbleText('Hmm let me think... 🤔');
 
@@ -579,14 +537,11 @@ Keep it one short, friendly, fun sentence.`;
       };
 
       recognition.onerror = (event) => {
-        console.error('[Yeti] Speech error:', event.error);
         if (event.error === 'no-speech') return;
         isListening = false;
         setYetiState('idle');
         setBubbleText('Yo, need help finding something? I got you! 🤙');
       };
-    } else {
-      console.warn('[Yeti] Web Speech API not supported');
     }
 
     function startListening() {
@@ -604,12 +559,10 @@ Keep it one short, friendly, fun sentence.`;
       setYetiState('listening');
       try {
         recognition.start();
-      } catch (e) {
-        console.error('[Yeti] Could not start mic:', e);
+      } catch {
         isListening = false;
         setYetiState('idle');
       }
-      console.log('[Yeti] Listening...');
     }
 
     function stopListening() {

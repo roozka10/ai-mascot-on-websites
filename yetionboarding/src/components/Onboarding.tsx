@@ -348,7 +348,7 @@ Rules:
 - Prefer scanned site knowledge over owner notes.
 - Never invent prices, policies, guarantees, hours, or availability.
 - Mention clean domains only, like example.com. No https, www, slashes, or long paths.
-- Do not output bracket commands like [navigate:/] or [scroll:#id]. Just speak naturally.`;
+- Just speak naturally.`;
 }
 
 function GoogleIcon() {
@@ -984,7 +984,6 @@ export default function Onboarding() {
 
       setStep(2);
     } catch (err: unknown) {
-      console.error(err);
       setError(err instanceof Error ? err.message : "Something went wrong");
     }
 

@@ -11,10 +11,7 @@
   var self = scripts[scripts.length - 1];
   var yetiId = self.getAttribute("data-yeti");
 
-  if (!yetiId) {
-    console.warn("[Yeti] Missing data-yeti attribute. Get your ID at yetigu.ide");
-    return;
-  }
+  if (!yetiId) return;
 
   // The host where the widget assets are deployed
   var host = self.src.replace(/\/widget\.js.*$/, "");
@@ -36,35 +33,13 @@
   container.appendChild(iframe);
   document.body.appendChild(container);
 
-  // Listen for resize and guide messages from the widget iframe.
+  // Only allow the widget iframe to request its own size changes.
   window.addEventListener("message", function (e) {
+    if (e.source !== iframe.contentWindow) return;
+
     if (e.data && e.data.type === "yeti-resize") {
       iframe.style.width = e.data.width + "px";
       iframe.style.height = e.data.height + "px";
-      return;
-    }
-
-    if (!e.data || e.data.type !== "yeti-guide" || !e.data.action) return;
-
-    var action = e.data.action;
-    if (action.type === "scroll" && action.target) {
-      var target = action.target;
-      var element = target.charAt(0) === "#"
-        ? document.getElementById(target.slice(1))
-        : document.querySelector(target);
-
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
-        element.style.transition = "box-shadow 0.3s";
-        element.style.boxShadow = "0 0 0 4px rgba(124, 91, 239, 0.28)";
-        setTimeout(function () {
-          element.style.boxShadow = "";
-        }, 1500);
-      }
-    }
-
-    if (action.type === "navigate" && action.target) {
-      window.location.href = action.target;
     }
   });
 })();

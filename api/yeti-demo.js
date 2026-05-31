@@ -9,7 +9,7 @@ function setCors(res) {
 
 function cleanReply(text) {
   return String(text || "")
-    .replace(/\[(?:navigate|scroll):[^\]]*\]/gi, "")
+    .replace(/\[[^\]]+\]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -103,8 +103,7 @@ module.exports = async function handler(req, res) {
       reply:
         "Yeti Guide scans your website and gives visitors short spoken answers, without the usual chatbot headache.",
     });
-  } catch (error) {
-    console.error("[Yeti Demo] failed", error);
+  } catch {
     res.status(200).json({
       reply:
         "Yeti Guide scans your website and gives visitors short spoken answers, without the usual chatbot headache.",

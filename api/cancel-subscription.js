@@ -183,8 +183,7 @@ export default async function handler(req, res) {
       status: canceledSubscription.status,
       cancel_at_period_end: canceledSubscription.cancel_at_period_end,
     });
-  } catch (error) {
-    console.error("[Account] Cancel subscription failed", error);
-    res.status(500).json({ error: error instanceof Error ? error.message : "Could not cancel subscription" });
+  } catch {
+    res.status(500).json({ error: "Could not cancel subscription" });
   }
 }

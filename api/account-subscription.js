@@ -91,16 +91,11 @@ async function getSubscriptionFromSupabase(email) {
       },
     );
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("[Account] Supabase subscription query failed", response.status, text);
-      return null;
-    }
+    if (!response.ok) return null;
 
     const rows = await response.json();
     return Array.isArray(rows) ? rows[0] || null : null;
-  } catch (error) {
-    console.error("[Account] Supabase subscription query error", error);
+  } catch {
     return null;
   }
 }
@@ -197,8 +192,7 @@ async function getSubscriptionFromStripe(email) {
 
     await saveSubscription(record);
     return record;
-  } catch (error) {
-    console.error("[Account] Stripe subscription lookup failed", error);
+  } catch {
     return null;
   }
 }
@@ -295,10 +289,7 @@ export default async function handler(req, res) {
         questions_limit: hasActivePlan ? subscription?.questions_limit || 0 : 0,
       },
     });
-  } catch (error) {
-    console.error("[Account] Subscription lookup failed", error);
-    res.status(500).json({
-      error: error instanceof Error ? error.message : "Could not load subscription",
-    });
+  } catch {
+    res.status(500).json({ error: "Could not load subscription" });
   }
 }

@@ -29,9 +29,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(String(yetiId))) {
+    res.status(400).json({ error: "Invalid Yeti id" });
+    return;
+  }
+
   try {
     const response = await fetch(
-      `${supabaseUrl}/rest/v1/yeti_configs?yeti_id=eq.${encodeURIComponent(yetiId)}&select=prompt,business_name`,
+      `${supabaseUrl}/rest/v1/yeti_configs?yeti_id=eq.${encodeURIComponent(yetiId)}&select=business_name`,
       {
         headers: {
           apikey: supabaseKey,
@@ -48,17 +53,15 @@ export default async function handler(req, res) {
     const data = await response.json();
     const config = Array.isArray(data) ? data[0] : null;
 
-    if (!config?.prompt) {
+    if (!config) {
       res.status(404).json({ error: "Yeti not found" });
       return;
     }
 
     res.status(200).json({
-      prompt: config.prompt,
       business_name: config.business_name,
     });
-  } catch (error) {
-    console.error("[Yeti API] Config failed", error);
+  } catch {
     res.status(500).json({ error: "Could not load Yeti config" });
   }
 }
