@@ -69,6 +69,28 @@ function canCreateWebsite(credits: {
   return credits.hasActivePlan && credits.websitesUsed < credits.websitesLimit;
 }
 
+async function fetchPersonalizedQuestions(businessName: string, url: string) {
+  try {
+    const response = await fetch("/api/onboarding-questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ businessName, url }),
+    });
+    const data = await response.json().catch(() => ({}));
+    const questions = Array.isArray(data?.questions)
+      ? data.questions.filter((question: unknown) => typeof question === "string" && question.trim())
+      : [];
+
+    if (!response.ok || questions.length < 5) {
+      return BUSINESS_BRIEF_QUESTIONS;
+    }
+
+    return questions.slice(0, 5);
+  } catch {
+    return BUSINESS_BRIEF_QUESTIONS;
+  }
+}
+
 type SpeechRecognitionResultListLike = {
   length: number;
   [index: number]: {
@@ -752,6 +774,7 @@ export default function Onboarding() {
   const [error, setError] = useState("");
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
+  const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
   const [listening, setListening] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
@@ -911,6 +934,9 @@ export default function Onboarding() {
         window.location.href = "/pricing";
         return;
       }
+      setStatusText("Writing questions for your website...");
+      const questions = await fetchPersonalizedQuestions(name.trim(), site.trim());
+      setBriefQuestions(questions);
       setStep(1);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not check your plan.");
@@ -1198,18 +1224,18 @@ export default function Onboarding() {
               <div className="mb-6 w-full rounded-[1.75rem] border border-border/60 bg-white/85 p-4 text-left shadow-[0_18px_58px_-42px_rgba(15,23,42,0.45)] backdrop-blur sm:p-5">
                 <div className="flex flex-col gap-2 text-center sm:text-left">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                    Teach Yeti in one recording
+                    Personalized from your website
                   </p>
                   <h1 className="text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
                     Answer these 5 quick questions
                   </h1>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    Tap the mic, talk naturally, and answer as many as you can. These are the details customers usually ask support teams first.
+                    Yeti checks your website, then asks simple questions to fill in what customers usually ask support teams.
                   </p>
                 </div>
 
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {BUSINESS_BRIEF_QUESTIONS.map((question, index) => (
+                  {briefQuestions.map((question, index) => (
                     <div
                       key={question}
                       className={`rounded-2xl border border-border/60 bg-white px-3 py-3 shadow-sm ${
