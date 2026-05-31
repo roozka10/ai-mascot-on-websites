@@ -18,7 +18,6 @@ const plans = [
       "1,000 AI questions/month",
       "Website scan",
       "Custom Yeti personality",
-      "Yeti branding",
     ],
   },
   {
@@ -31,7 +30,6 @@ const plans = [
     features: [
       "10 websites included",
       "5,000 AI questions/month",
-      "Remove Yeti branding",
       "Better analytics",
       "Priority retraining",
     ],
