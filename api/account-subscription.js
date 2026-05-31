@@ -4,6 +4,12 @@ const PLAN_LIMITS = {
   agency: { websites_limit: 50, questions_limit: 25000 },
 };
 
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+function isActiveSubscription(subscription) {
+  return Boolean(subscription && ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status));
+}
+
 function getSupabaseConfig() {
   return {
     url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
@@ -82,7 +88,7 @@ async function getSubscriptionFromSupabase(email) {
     const response = await fetch(
       `${url}/rest/v1/yeti_subscriptions?user_email=eq.${encodeURIComponent(
         email,
-      )}&select=stripe_subscription_id,plan,status,websites_limit,questions_limit&order=updated_at.desc&limit=1`,
+      )}&select=stripe_subscription_id,plan,status,websites_limit,questions_limit,updated_at&order=updated_at.desc&limit=20`,
       {
         headers: {
           apikey: key,
@@ -94,7 +100,8 @@ async function getSubscriptionFromSupabase(email) {
     if (!response.ok) return null;
 
     const rows = await response.json();
-    return Array.isArray(rows) ? rows[0] || null : null;
+    if (!Array.isArray(rows)) return null;
+    return rows.find(isActiveSubscription) || rows[0] || null;
   } catch {
     return null;
   }
@@ -154,6 +161,8 @@ async function getSubscriptionFromStripe(email) {
 
     let matchedCustomer = null;
     let matchedSubscription = null;
+    let fallbackCustomer = null;
+    let fallbackSubscription = null;
 
     for (const customer of matchingCustomers) {
       if (!customer?.id) continue;
@@ -164,17 +173,23 @@ async function getSubscriptionFromStripe(email) {
         limit: "100",
       });
 
-      const subscription =
-        subscriptions.data?.find((item) =>
-          ["active", "trialing", "past_due"].includes(item.status),
-        ) || subscriptions.data?.[0];
+      const data = Array.isArray(subscriptions.data) ? subscriptions.data : [];
+      const subscription = data.find(isActiveSubscription);
 
       if (subscription?.id) {
         matchedCustomer = customer;
         matchedSubscription = subscription;
         break;
       }
+
+      if (!fallbackSubscription && data[0]?.id) {
+        fallbackCustomer = customer;
+        fallbackSubscription = data[0];
+      }
     }
+
+    matchedCustomer = matchedCustomer || fallbackCustomer;
+    matchedSubscription = matchedSubscription || fallbackSubscription;
 
     if (!matchedSubscription?.id || !matchedCustomer?.id) return null;
 
@@ -199,8 +214,12 @@ async function getSubscriptionFromStripe(email) {
 
 async function getSubscription(email) {
   const fromDb = await getSubscriptionFromSupabase(email);
-  if (fromDb?.stripe_subscription_id) return fromDb;
-  return getSubscriptionFromStripe(email);
+  if (isActiveSubscription(fromDb)) return fromDb;
+
+  const fromStripe = await getSubscriptionFromStripe(email);
+  if (isActiveSubscription(fromStripe)) return fromStripe;
+
+  return fromStripe || fromDb;
 }
 
 async function getWebsiteUsage(email) {
@@ -272,8 +291,7 @@ export default async function handler(req, res) {
     }
 
     const subscription = await getSubscription(user.email);
-    const hasActivePlan =
-      subscription && ["active", "trialing", "past_due"].includes(subscription.status);
+    const hasActivePlan = isActiveSubscription(subscription);
     const [websitesUsed, questionsUsed] = await Promise.all([
       getWebsiteUsage(user.email),
       getQuestionUsage(user.email),
