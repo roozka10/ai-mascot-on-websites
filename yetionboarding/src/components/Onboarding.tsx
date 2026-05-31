@@ -549,13 +549,20 @@ function AccountPage({
     }
   }
 
-  const planName = subscription?.plan
+  const isCanceled = subscription?.status === "canceled";
+  const planName = isCanceled
+    ? "Buy a plan"
+    : subscription?.plan
     ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
     : "No paid plan yet";
-  const websiteCredits = credits
+  const websiteCredits = isCanceled
+    ? "0"
+    : credits
     ? `${credits.websites_used}/${credits.websites_limit || "-"}`
     : "-";
-  const questionCredits = credits
+  const questionCredits = isCanceled
+    ? "0"
+    : credits
     ? `${credits.questions_used.toLocaleString()}/${credits.questions_limit ? credits.questions_limit.toLocaleString() : "-"}`
     : "-";
 
@@ -584,7 +591,7 @@ function AccountPage({
                 {subscriptionLoading ? "Loading..." : planName}
               </h2>
               <p className="mt-1 text-xs font-bold text-muted-foreground">
-                {subscriptionLoading ? "Checking credits..." : "Plan and monthly credits"}
+                {subscriptionLoading ? "Checking credits..." : isCanceled ? "Choose a plan to unlock credits" : "Plan and monthly credits"}
               </p>
             </div>
           </div>
@@ -627,10 +634,10 @@ function AccountPage({
             <button
               type="button"
               onClick={() => setShowCancel(true)}
-              disabled={!subscription?.stripe_subscription_id || subscription?.status === "canceled"}
+              disabled={!subscription?.stripe_subscription_id || isCanceled}
               className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {subscription?.status === "canceled" ? "Plan canceled" : "Cancel plan"}
+              {isCanceled ? "Plan canceled" : "Cancel plan"}
             </button>
           </div>
         </div>

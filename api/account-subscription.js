@@ -278,6 +278,8 @@ export default async function handler(req, res) {
     }
 
     const subscription = await getSubscription(user.email);
+    const hasActivePlan =
+      subscription && ["active", "trialing", "past_due"].includes(subscription.status);
     const [websitesUsed, questionsUsed] = await Promise.all([
       getWebsiteUsage(user.email),
       getQuestionUsage(user.email),
@@ -287,10 +289,10 @@ export default async function handler(req, res) {
       email: user.email,
       subscription,
       credits: {
-        websites_used: websitesUsed,
-        websites_limit: subscription?.websites_limit || 0,
-        questions_used: questionsUsed,
-        questions_limit: subscription?.questions_limit || 0,
+        websites_used: hasActivePlan ? websitesUsed : 0,
+        websites_limit: hasActivePlan ? subscription?.websites_limit || 0 : 0,
+        questions_used: hasActivePlan ? questionsUsed : 0,
+        questions_limit: hasActivePlan ? subscription?.questions_limit || 0 : 0,
       },
     });
   } catch (error) {
