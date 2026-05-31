@@ -27,7 +27,7 @@ import {
   supabase,
 } from "@/lib/supabase";
 
-const TOTAL = 3;
+const TOTAL = 4;
 
 const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
 
@@ -775,6 +775,7 @@ export default function Onboarding() {
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
+  const [briefAnswers, setBriefAnswers] = useState<string[]>(() => BUSINESS_BRIEF_QUESTIONS.map(() => ""));
   const [currentBriefQuestionIndex, setCurrentBriefQuestionIndex] = useState(0);
   const [listening, setListening] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
@@ -791,6 +792,7 @@ export default function Onboarding() {
   const canContinue = name.trim().length > 0 && site.trim().length > 0;
   const currentBriefQuestion =
     briefQuestions[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[0];
+  const currentBriefAnswer = briefAnswers[currentBriefQuestionIndex] || "";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -826,7 +828,12 @@ export default function Onboarding() {
 
       if (finalText.trim()) {
         heardSpeechRef.current = true;
-        setTranscript((current) => `${current} ${finalText.trim()}`.trim());
+        const answerText = finalText.trim();
+        setBriefAnswers((current) => {
+          const next = [...current];
+          next[currentBriefQuestionIndex] = `${next[currentBriefQuestionIndex] || ""} ${answerText}`.trim();
+          return next;
+        });
       }
       setInterimTranscript(interimText.trim());
     };
@@ -845,7 +852,7 @@ export default function Onboarding() {
       setListening(false);
       setInterimTranscript("");
       if (heardSpeechRef.current) {
-        setCurrentBriefQuestionIndex((current) => Math.min(current + 1, BUSINESS_BRIEF_QUESTIONS.length - 1));
+        setCurrentBriefQuestionIndex((current) => Math.min(current + 1, briefQuestions.length - 1));
         heardSpeechRef.current = false;
       }
     };
@@ -855,7 +862,7 @@ export default function Onboarding() {
     return () => {
       recognition.abort();
     };
-  }, []);
+  }, [briefQuestions.length, currentBriefQuestionIndex]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -946,6 +953,7 @@ export default function Onboarding() {
       setStatusText("Writing questions for your website...");
       const questions = await fetchPersonalizedQuestions(name.trim(), site.trim());
       setBriefQuestions(questions);
+      setBriefAnswers(questions.map(() => ""));
       setCurrentBriefQuestionIndex(0);
       setStep(1);
     } catch (err: unknown) {
@@ -1004,10 +1012,17 @@ export default function Onboarding() {
       const allPages = scans.map((scan) => scan.path).filter(Boolean).slice(0, 20);
 
       setStatusText("Saving your Yeti...");
+      const answerNotes = briefQuestions
+        .map((question, index) => {
+          const answer = (briefAnswers[index] || "").trim();
+          return answer ? `${question}\n${answer}` : "";
+        })
+        .filter(Boolean)
+        .join("\n\n");
       const voicePrompt = buildVoicePrompt({
         name,
         url,
-        transcript,
+        transcript: answerNotes || transcript,
         scans,
       });
 
@@ -1026,14 +1041,14 @@ export default function Onboarding() {
 <script src="${WIDGET_HOST}/widget.js" data-yeti="${id}" async></script>`;
       setSnippet(code);
 
-      setStep(2);
+      setStep(3);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     }
 
     setLoading(false);
     setStatusText("");
-  }, [name, session?.access_token, site, transcript]);
+  }, [briefAnswers, briefQuestions, name, session?.access_token, site, transcript]);
 
   const copy = async () => {
     await navigator.clipboard.writeText(snippet);
@@ -1104,8 +1119,8 @@ export default function Onboarding() {
     );
   }
 
-  // Step 2 — horizontal layout
-  if (step === 2) {
+  // Step 3 — horizontal layout
+  if (step === 3) {
     const displaySnippet = `<!-- Yeti Guide Widget -->\n<script\n  src="${WIDGET_HOST}/widget.js"\n  data-yeti="${yetiId}"\n  async\n></script>`;
 
     return (
@@ -1113,7 +1128,7 @@ export default function Onboarding() {
       {nav}
       <main className="min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
         <div className="w-full max-w-[1040px] mx-auto">
-          <StepShell step={2}>
+          <StepShell step={3}>
             <Stepper step={step} />
 
             <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[0.9fr_1.1fr]">
@@ -1161,7 +1176,7 @@ export default function Onboarding() {
 
                 <div className="mt-8 flex gap-3">
                   <button
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium text-muted-foreground transition hover:bg-muted"
                   >
                     <ArrowLeft className="h-4 w-4" /> Back
@@ -1173,6 +1188,7 @@ export default function Onboarding() {
                       setTranscript("");
                       setInterimTranscript("");
                       setBriefQuestions(BUSINESS_BRIEF_QUESTIONS);
+                      setBriefAnswers(BUSINESS_BRIEF_QUESTIONS.map(() => ""));
                       setCurrentBriefQuestionIndex(0);
                       setVoiceStarted(false);
                       setSnippet("");
@@ -1222,6 +1238,108 @@ export default function Onboarding() {
     );
   }
 
+  // Step 2 — review answers before saving
+  if (step === 2) {
+    return (
+      <>
+      {nav}
+      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-24">
+        <div className="mx-auto w-full max-w-[820px]">
+          <StepShell step={2}>
+            <Stepper step={step} />
+
+            <section className="rounded-[1.75rem] border border-border/60 bg-white/90 p-4 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] backdrop-blur sm:p-6">
+              <div className="flex flex-col items-center text-center">
+                <Mascot size={54} />
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+                  Review answers
+                </p>
+                <h1 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
+                  Clean up what Yeti learned
+                </h1>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+                  Click any answer to edit it. Empty answers are okay, but better details make Yeti smarter.
+                </p>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {briefQuestions.map((question, index) => (
+                  <label
+                    key={question}
+                    className={`${index === 0 ? "sm:col-span-2" : ""} block rounded-2xl border border-border/70 bg-white px-4 py-3 shadow-sm transition focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10`}
+                  >
+                    <span className="flex items-start gap-2 text-xs font-black leading-5 text-foreground">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">
+                        {index + 1}
+                      </span>
+                      {question}
+                    </span>
+                    <textarea
+                      value={briefAnswers[index] || ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setBriefAnswers((current) => {
+                          const next = [...current];
+                          next[index] = value;
+                          return next;
+                        });
+                      }}
+                      rows={2}
+                      placeholder="Type or edit this answer..."
+                      className="mt-2 min-h-16 w-full resize-none bg-transparent text-sm font-semibold leading-5 text-foreground outline-none placeholder:text-muted-foreground/60"
+                    />
+                  </label>
+                ))}
+              </div>
+
+              {error && (
+                <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                  {error}
+                </div>
+              )}
+
+              {loading && statusText && (
+                <div className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {statusText}
+                </div>
+              )}
+
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-white/70 px-5 py-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:bg-white"
+                >
+                  <ArrowLeft className="h-4 w-4" /> Back to questions
+                </button>
+                <button
+                  type="button"
+                  onClick={saveVoicePersonality}
+                  disabled={loading}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving Yeti...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Save and get embed code
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
+          </StepShell>
+        </div>
+      </main>
+      </>
+    );
+  }
+
   // Step 1 gets its own full-page layout
   if (step === 1) {
     return (
@@ -1239,11 +1357,11 @@ export default function Onboarding() {
               <p className="mt-2 text-xs font-bold text-muted-foreground">
                 Question {currentBriefQuestionIndex + 1} of {briefQuestions.length}
               </p>
-              <h1 className="mt-3 max-w-xl text-balance text-3xl font-black leading-tight tracking-[-0.06em] text-foreground sm:text-4xl">
+              <h1 className="mt-3 max-w-xl text-balance text-2xl font-black leading-tight tracking-[-0.05em] text-foreground sm:text-3xl">
                 {currentBriefQuestion}
               </h1>
-              <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-                Tap the mic and answer out loud. Yeti saves your answer, then moves to the next question.
+              <p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">
+                Tap the mic to answer. It moves to the next question when you stop talking.
               </p>
 
               <div className="mt-5 flex items-center justify-center gap-1.5">
@@ -1264,12 +1382,12 @@ export default function Onboarding() {
                 ))}
               </div>
 
-              <div className="relative mt-7 flex items-center justify-center">
-                <div className="absolute h-36 w-36 rounded-full bg-primary/15 blur-3xl" />
+              <div className="relative mt-5 flex items-center justify-center">
+                <div className="absolute h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
                 <img
                   src={yeti}
                   alt="Yeti mascot"
-                  className="relative z-10 w-[135px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[165px]"
+                  className="relative z-10 w-[120px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[150px]"
                 />
               </div>
 
@@ -1291,6 +1409,11 @@ export default function Onboarding() {
               <p className="mt-3 text-xs font-medium text-foreground/80">
                 {listening ? "Listening..." : voiceStarted ? "Tap again for the next answer" : "Tap the mic to answer"}
               </p>
+              {currentBriefAnswer && (
+                <p className="mt-1 max-w-md truncate text-xs font-semibold text-primary">
+                  Answer saved
+                </p>
+              )}
 
               {!speechSupported && (
                 <div className="mt-4 max-w-sm text-sm text-amber-700">
@@ -1311,25 +1434,6 @@ export default function Onboarding() {
                 </div>
               )}
 
-              <div className="mt-5 flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentBriefQuestionIndex((current) => Math.max(current - 1, 0))}
-                  disabled={currentBriefQuestionIndex === 0}
-                  className="rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold text-muted-foreground transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Back question
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentBriefQuestionIndex((current) => Math.min(current + 1, briefQuestions.length - 1))}
-                  disabled={currentBriefQuestionIndex === briefQuestions.length - 1}
-                  className="rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold text-muted-foreground transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Skip
-                </button>
-              </div>
-
               <div className="mt-5 flex w-full gap-3">
                 <button
                   onClick={() => {
@@ -1342,21 +1446,12 @@ export default function Onboarding() {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button
-                  onClick={saveVoicePersonality}
+                  onClick={() => setStep(2)}
                   disabled={loading}
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground font-medium py-3 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving Yeti...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Save and get embed code
-                    </>
-                  )}
+                  Continue
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
