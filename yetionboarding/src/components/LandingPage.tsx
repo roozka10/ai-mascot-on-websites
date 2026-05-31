@@ -9,6 +9,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
+import { PricingSection } from "@/components/PricingSection";
 import yeti from "@/assets/yeti.png";
 
 const HERO_VIDEO_URL =
@@ -25,6 +26,7 @@ function HeroNav({ onStart }: LandingPageProps) {
   const navItems = [
     { label: "How", href: "#how-it-works" },
     { label: "Compare", href: "#compare" },
+    { label: "Pricing", href: "#pricing" },
     { label: "Takes", href: "#takes" },
     { label: "Mission", href: "#mission" },
   ];
@@ -262,6 +264,8 @@ export function LandingPage({ onStart }: LandingPageProps) {
           </div>
         </div>
       </section>
+
+      <PricingSection onStart={onStart} />
 
       <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
