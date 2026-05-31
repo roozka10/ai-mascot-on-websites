@@ -33,10 +33,10 @@ const TOTAL = 4;
 const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
 
 const BUSINESS_BRIEF_QUESTIONS = [
-  "What do you sell, who is it for, and what makes it different?",
-  "What questions do customers ask before they buy?",
-  "What are your prices, packages, trials, guarantees, or refund rules?",
-  "What should Yeti say about shipping, booking, hours, support, or contact info?",
+  "What are 3 real questions visitors ask that your landing page does not already answer?",
+  "Who is your best-fit customer, and who should Yeti politely say this is not for?",
+  "What should Yeti tell visitors when it is not sure or needs to hand them to you?",
+  "What rules, limits, refunds, guarantees, or safety details should Yeti never guess about?",
   "What tone should Yeti use, and what should it never promise?",
 ];
 

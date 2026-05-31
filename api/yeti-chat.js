@@ -80,7 +80,7 @@ async function getSubscriptionForEmail(email) {
   const response = await fetch(
     `${url}/rest/v1/yeti_subscriptions?user_email=eq.${encodeURIComponent(
       email,
-    )}&select=plan,status,questions_limit&order=updated_at.desc&limit=1`,
+    )}&select=plan,status,questions_limit&order=updated_at.desc&limit=20`,
     {
       headers: {
         apikey: key,
@@ -91,7 +91,9 @@ async function getSubscriptionForEmail(email) {
 
   if (!response.ok) return null;
   const rows = await response.json();
-  return Array.isArray(rows) ? rows[0] || null : null;
+  if (!Array.isArray(rows)) return null;
+  const activeStatuses = new Set(["active", "trialing", "past_due"]);
+  return rows.find((row) => activeStatuses.has(row?.status)) || rows[0] || null;
 }
 
 async function getFreeQuestionCredits(email) {
@@ -138,11 +140,27 @@ async function getQuestionUsage(email) {
   return Array.isArray(rows) ? Number(rows[0]?.questions_used || 0) : 0;
 }
 
-async function incrementQuestionUsage(email) {
+async function reserveQuestionCredit(email, limit) {
   const { url, key } = getSupabaseConfig();
-  if (!url || !key || !email) return;
+  if (!url || !key || !email || limit <= 0) return false;
 
-  await fetch(`${url}/rest/v1/rpc/increment_yeti_question_usage`, {
+  const reserveResponse = await fetch(`${url}/rest/v1/rpc/reserve_yeti_question_credit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({ p_user_email: email, p_limit: limit }),
+  });
+
+  if (reserveResponse.ok) {
+    const rows = await reserveResponse.json().catch(() => []);
+    const result = Array.isArray(rows) ? rows[0] : rows;
+    return Boolean(result?.reserved);
+  }
+
+  const rpcResponse = await fetch(`${url}/rest/v1/rpc/increment_yeti_question_usage`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,6 +169,60 @@ async function incrementQuestionUsage(email) {
     },
     body: JSON.stringify({ p_user_email: email }),
   });
+
+  if (rpcResponse.ok) return true;
+
+  const month = new Date().toISOString().slice(0, 7);
+  const existingResponse = await fetch(
+    `${url}/rest/v1/yeti_usage_monthly?user_email=eq.${encodeURIComponent(
+      email,
+    )}&month=eq.${month}&select=questions_used&limit=1`,
+    {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    },
+  );
+
+  if (!existingResponse.ok) return false;
+  const rows = await existingResponse.json();
+  const existing = Array.isArray(rows) ? rows[0] : null;
+
+  if (existing) {
+    const updateResponse = await fetch(
+      `${url}/rest/v1/yeti_usage_monthly?user_email=eq.${encodeURIComponent(email)}&month=eq.${month}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          questions_used: Number(existing.questions_used || 0) + 1,
+          updated_at: new Date().toISOString(),
+        }),
+      },
+    );
+    return updateResponse.ok;
+  }
+
+  const insertResponse = await fetch(`${url}/rest/v1/yeti_usage_monthly`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      user_email: email,
+      month,
+      questions_used: 1,
+    }),
+  });
+
+  return insertResponse.ok;
 }
 
 async function enforceQuestionCredits(yetiId) {
@@ -170,7 +242,14 @@ async function enforceQuestionCredits(yetiId) {
     return "This Yeti has used all AI question credits for this month.";
   }
 
-  await incrementQuestionUsage(ownerEmail);
+  const reserved = await reserveQuestionCredit(ownerEmail, limit);
+  if (!reserved) {
+    const latestUsed = await getQuestionUsage(ownerEmail);
+    return latestUsed >= limit
+      ? "This Yeti has used all AI question credits for this month."
+      : "This Yeti could not verify question credits right now.";
+  }
+
   return null;
 }
 

@@ -5,10 +5,10 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const HUGGINGFACE_URL = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
 
 const FALLBACK_QUESTIONS = [
-  "What do you sell, who is it for, and what makes it different?",
-  "What questions do customers ask before they buy?",
-  "What are your prices, packages, trials, guarantees, or refund rules?",
-  "What should Yeti say about shipping, booking, hours, support, or contact info?",
+  "What are 3 real questions visitors ask that your landing page does not already answer?",
+  "Who is your best-fit customer, and who should Yeti politely say this is not for?",
+  "What should Yeti tell visitors when it is not sure or needs to hand them to you?",
+  "What rules, limits, refunds, guarantees, or safety details should Yeti never guess about?",
   "What tone should Yeti use, and what should it never promise?",
 ];
 
@@ -157,17 +157,61 @@ function getBusinessLabel(url, businessName, websiteSummary) {
   return cleanText(businessName || title || url.hostname.replace(/^www\./, "")).slice(0, 80);
 }
 
+function getWebsiteSignals(websiteSummary) {
+  return {
+    pricing: /(\$\s?\d|\bprice\b|\bpricing\b|\bcost\b|\bplan\b|\bpackage\b|\btrial\b|\bfree\b|\bsubscription\b|\bper month\b)/i.test(websiteSummary),
+    contact: /(\bcontact\b|\bemail\b|\bphone\b|\bcall\b|\bmessage\b|\bsupport\b|\bchat\b|\bhelp\b)/i.test(websiteSummary),
+    booking: /(\bbook\b|\bschedule\b|\bappointment\b|\bdemo\b|\bcheckout\b|\bsign up\b|\bstart\b|\bget started\b|\border\b|\bbuy\b)/i.test(websiteSummary),
+    hours: /(\bhours\b|\bopen\b|\bclosed\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|\bsat\b|\bsun\b|\b24\/7\b|\bresponse time\b)/i.test(websiteSummary),
+    policies: /(\brefund\b|\bcancel\b|\breturn\b|\bprivacy\b|\bterms\b|\bguarantee\b|\bwarranty\b|\bpolicy\b|\bsecure\b)/i.test(websiteSummary),
+  };
+}
+
 function getContextualQuestions(url, businessName, websiteSummary) {
   const label = getBusinessLabel(url, businessName, websiteSummary);
   const domain = url.hostname.replace(/^www\./, "");
-
-  return [
-    `What should Yeti say ${label} does, who it helps, and why visitors should care?`,
-    `What is the most common question people ask before they trust or buy from ${label}?`,
-    `What prices, packages, booking steps, trials, or offers should Yeti explain for ${label}?`,
-    `What support details for ${domain} should Yeti know, like contact, hours, delivery, refunds, or setup help?`,
-    `What tone should Yeti use for ${label}, and what should it never promise visitors?`,
+  const signals = getWebsiteSignals(websiteSummary);
+  const questions = [
+    `What are 3 real questions visitors ask about ${label} that the landing page does not already answer?`,
+    `Who is the best-fit customer for ${label}, and who should Yeti politely say it is not for?`,
   ];
+
+  if (!signals.pricing) {
+    questions.push(`What prices, plans, free trials, or quote details should Yeti know for ${label}?`);
+  }
+
+  if (!signals.booking) {
+    questions.push(`What should Yeti tell visitors to do next on ${domain}, step by step?`);
+  }
+
+  if (!signals.contact) {
+    questions.push(`How should visitors contact ${label} if Yeti cannot answer something?`);
+  }
+
+  if (!signals.hours) {
+    questions.push(`Are there hours, response times, or availability limits Yeti should mention for ${label}?`);
+  }
+
+  if (!signals.policies) {
+    questions.push(`What refund, cancellation, privacy, guarantee, or safety rules should Yeti explain for ${label}?`);
+  }
+
+  questions.push(`What tone should Yeti use for ${label}, and what should it never promise visitors?`);
+
+  return questions.slice(0, 5);
+}
+
+function asksAboutKnownWebsiteFact(question, websiteSummary) {
+  const signals = getWebsiteSignals(websiteSummary);
+  const checks = [
+    [signals.pricing, /\b(price|pricing|cost|plan|package|trial|subscription|offer)\b/i],
+    [signals.contact, /\b(contact|email|phone|call|message|support)\b/i],
+    [signals.booking, /\b(book|schedule|appointment|demo|checkout|sign up|get started|order|buy)\b/i],
+    [signals.hours, /\b(hours|open|closed|availability|response time)\b/i],
+    [signals.policies, /\b(refund|cancel|return|privacy|terms|guarantee|warranty|policy)\b/i],
+  ];
+
+  return checks.some(([isKnown, pattern]) => isKnown && pattern.test(question));
 }
 
 function isGenericQuestion(question, url, businessName, websiteSummary) {
@@ -216,7 +260,7 @@ async function callProvider(url, headers, model, websiteSummary) {
     {
       role: "system",
       content:
-        "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. Every question must mention the actual business name, website domain, product, or a specific phrase found in the website notes. Never ask generic questions like 'what do your customers ask?' or 'what do you sell?'. Ask about common customer questions, pricing/offers, booking/shipping/support, trust/policies, and tone/limits. Do not include markdown.",
+        "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. First read the website notes and do NOT ask for facts already visible on the landing page. Ask for missing details the AI still needs, such as unanswered customer questions, ideal customer, limits, edge cases, support handoff, policies not shown, and tone. Every question must mention the actual business name, website domain, product, or a specific phrase found in the website notes. Never ask generic questions like 'what do your customers ask?' or 'what do you sell?'. If pricing, contact, booking, hours, or policies are already shown in the notes, do not ask for them. Do not include markdown.",
     },
     {
       role: "user",
@@ -297,7 +341,12 @@ module.exports = async function handler(req, res) {
     const generated = await generateQuestions(summary, req.headers.origin);
     const contextualQuestions = getContextualQuestions(url, businessName, summary);
     const questions =
-      generated?.length === 5 && !generated.some((question) => isGenericQuestion(question, url, businessName, summary))
+      generated?.length === 5 &&
+      !generated.some(
+        (question) =>
+          isGenericQuestion(question, url, businessName, summary) ||
+          asksAboutKnownWebsiteFact(question, summary),
+      )
         ? generated
         : contextualQuestions;
     res.status(200).json({ questions });

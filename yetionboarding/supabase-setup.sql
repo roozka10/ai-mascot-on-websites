@@ -359,6 +359,64 @@ begin
 end;
 $$;
 
+create or replace function public.reserve_yeti_question_credit(
+  p_user_email text,
+  p_limit integer
+)
+returns table (
+  reserved boolean,
+  questions_used integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_month text := to_char(now(), 'YYYY-MM');
+  current_used integer;
+begin
+  if p_user_email is null or p_user_email = '' or p_limit <= 0 then
+    return query select false, 0;
+    return;
+  end if;
+
+  insert into public.yeti_usage_monthly (
+    user_email,
+    month,
+    questions_used
+  )
+  values (
+    p_user_email,
+    current_month,
+    0
+  )
+  on conflict (user_email, month)
+  do nothing;
+
+  update public.yeti_usage_monthly
+  set questions_used = public.yeti_usage_monthly.questions_used + 1,
+      updated_at = now()
+  where user_email = p_user_email
+    and month = current_month
+    and questions_used < p_limit
+  returning public.yeti_usage_monthly.questions_used into current_used;
+
+  if current_used is null then
+    select yum.questions_used
+      into current_used
+      from public.yeti_usage_monthly yum
+      where yum.user_email = p_user_email
+        and yum.month = current_month
+      limit 1;
+
+    return query select false, coalesce(current_used, 0);
+    return;
+  end if;
+
+  return query select true, current_used;
+end;
+$$;
+
 -- -----------------------------------------------------------------------------
 -- 5. API permissions (anon + authenticated clients)
 -- -----------------------------------------------------------------------------
@@ -370,6 +428,7 @@ grant all on public.yeti_usage_monthly to service_role;
 grant execute on function public.match_yeti_faq(text, text, real) to service_role;
 grant execute on function public.upsert_yeti_faq(text, text, text) to service_role;
 grant execute on function public.increment_yeti_question_usage(text) to service_role;
+grant execute on function public.reserve_yeti_question_credit(text, integer) to service_role;
 
 -- -----------------------------------------------------------------------------
 -- Done. In Supabase UI also confirm:
