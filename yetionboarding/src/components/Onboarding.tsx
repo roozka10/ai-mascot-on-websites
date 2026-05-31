@@ -1557,7 +1557,7 @@ export default function Onboarding() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
                 {currentBriefQuestionIndex + 1}/{briefQuestions.length}
               </p>
-              <h1 className="mt-2 w-full max-w-[680px] truncate text-xl font-black tracking-[-0.04em] text-foreground sm:text-2xl">
+              <h1 className="mt-2 w-full max-w-[760px] text-balance text-xl font-black leading-tight tracking-[-0.04em] text-foreground sm:text-2xl">
                 {currentBriefQuestion}
               </h1>
 

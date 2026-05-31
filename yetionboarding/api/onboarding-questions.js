@@ -152,6 +152,35 @@ function summarizeWebsite(html, url, businessName) {
     .slice(0, 6000);
 }
 
+function getBusinessLabel(url, businessName, websiteSummary) {
+  const title = websiteSummary.match(/^Title:\s*(.+)$/m)?.[1];
+  return cleanText(businessName || title || url.hostname.replace(/^www\./, "")).slice(0, 80);
+}
+
+function getContextualQuestions(url, businessName, websiteSummary) {
+  const label = getBusinessLabel(url, businessName, websiteSummary);
+  const domain = url.hostname.replace(/^www\./, "");
+
+  return [
+    `What should Yeti say ${label} does, who it helps, and why visitors should care?`,
+    `What is the most common question people ask before they trust or buy from ${label}?`,
+    `What prices, packages, booking steps, trials, or offers should Yeti explain for ${label}?`,
+    `What support details for ${domain} should Yeti know, like contact, hours, delivery, refunds, or setup help?`,
+    `What tone should Yeti use for ${label}, and what should it never promise visitors?`,
+  ];
+}
+
+function isGenericQuestion(question, url, businessName, websiteSummary) {
+  const lower = question.toLowerCase();
+  const label = getBusinessLabel(url, businessName, websiteSummary).toLowerCase();
+  const domain = url.hostname.replace(/^www\./, "").toLowerCase();
+
+  if (label && lower.includes(label)) return false;
+  if (domain && lower.includes(domain)) return false;
+
+  return /your (business|company|customers|website|product|service)|what do you sell|who is it for|common question/i.test(question);
+}
+
 function cleanQuestion(value) {
   return String(value || "")
     .replace(/^[-*\d.)\s]+/, "")
@@ -187,7 +216,7 @@ async function callProvider(url, headers, model, websiteSummary) {
     {
       role: "system",
       content:
-        "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. Make each question simple, specific to the website, and easy for a small business owner to answer out loud. Ask about common customer questions, pricing/offers, booking/shipping/support, trust/policies, and tone/limits. Do not include markdown.",
+        "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. Every question must mention the actual business name, website domain, product, or a specific phrase found in the website notes. Never ask generic questions like 'what do your customers ask?' or 'what do you sell?'. Ask about common customer questions, pricing/offers, booking/shipping/support, trust/policies, and tone/limits. Do not include markdown.",
     },
     {
       role: "user",
@@ -266,7 +295,11 @@ export default async function handler(req, res) {
     const html = await fetchSafeText(url);
     const summary = summarizeWebsite(html, url, businessName);
     const generated = await generateQuestions(summary, req.headers.origin);
-    const questions = [...(generated || []), ...FALLBACK_QUESTIONS].slice(0, 5);
+    const contextualQuestions = getContextualQuestions(url, businessName, summary);
+    const questions =
+      generated?.length === 5 && !generated.some((question) => isGenericQuestion(question, url, businessName, summary))
+        ? generated
+        : contextualQuestions;
     res.status(200).json({ questions });
   } catch {
     res.status(200).json({ questions: FALLBACK_QUESTIONS });
