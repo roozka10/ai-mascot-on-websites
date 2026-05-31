@@ -621,7 +621,7 @@ function AccountPage({
               href="/pricing"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
             >
-              View pricing
+              Upgrade plan
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
             <button
