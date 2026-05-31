@@ -31,6 +31,36 @@ const TOTAL = 3;
 
 const WIDGET_HOST = "https://ai-mascot-on-websites.vercel.app";
 
+const ACTIVE_PLAN_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+async function fetchSetupCredits(accessToken: string) {
+  const response = await fetch("/api/account-subscription", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Could not check your plan credits.");
+  }
+
+  const websitesUsed = Number(data?.credits?.websites_used || 0);
+  const websitesLimit = Number(data?.credits?.websites_limit || 0);
+  const status = data?.subscription?.status;
+  const hasActivePlan =
+    Boolean(data?.subscription) &&
+    ACTIVE_PLAN_STATUSES.has(status) &&
+    websitesLimit > 0;
+
+  return { hasActivePlan, websitesUsed, websitesLimit };
+}
+
+function canCreateWebsite(credits: {
+  hasActivePlan: boolean;
+  websitesUsed: number;
+  websitesLimit: number;
+}) {
+  return credits.hasActivePlan && credits.websitesUsed < credits.websitesLimit;
+}
+
 type SpeechRecognitionResultListLike = {
   length: number;
   [index: number]: {
@@ -856,10 +886,30 @@ export default function Onboarding() {
     setListening(false);
   };
 
-  const continueToVoice = () => {
+  const continueToVoice = async () => {
     if (!name.trim() || !site.trim()) return;
+    if (!session?.access_token) {
+      setError("Sign in to continue.");
+      return;
+    }
+
     setError("");
-    setStep(1);
+    setLoading(true);
+    setStatusText("Checking your plan...");
+
+    try {
+      const credits = await fetchSetupCredits(session.access_token);
+      if (!canCreateWebsite(credits)) {
+        window.location.href = "/pricing";
+        return;
+      }
+      setStep(1);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not check your plan.");
+    } finally {
+      setLoading(false);
+      setStatusText("");
+    }
   };
 
   const signInWithGoogle = async () => {
@@ -894,22 +944,10 @@ export default function Onboarding() {
 
       if (session?.access_token) {
         setStatusText("Checking website credits...");
-        const creditResponse = await fetch("/api/account-subscription", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const creditData = await creditResponse.json().catch(() => ({}));
-        if (!creditResponse.ok) {
-          throw new Error(creditData?.error || "Could not check your plan credits.");
-        }
-
-        const websiteCredits = creditData?.credits;
-        const websitesUsed = Number(websiteCredits?.websites_used || 0);
-        const websitesLimit = Number(websiteCredits?.websites_limit || 0);
-        if (!creditData?.subscription || websitesLimit <= 0) {
-          throw new Error("Choose a plan before creating a Yeti website.");
-        }
-        if (websitesUsed >= websitesLimit) {
-          throw new Error(`Your plan includes ${websitesLimit} website${websitesLimit === 1 ? "" : "s"}. Upgrade to add another one.`);
+        const credits = await fetchSetupCredits(session.access_token);
+        if (!canCreateWebsite(credits)) {
+          window.location.href = "/pricing";
+          return;
         }
       }
 
@@ -1314,13 +1352,13 @@ export default function Onboarding() {
               )}
 
               <button
-                disabled={!canContinue}
-                onClick={continueToVoice}
+                disabled={!canContinue || loading}
+                onClick={() => void continueToVoice()}
                 className="mt-8 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-medium py-3.5 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
               >
-                <Sparkles className="h-4 w-4" />
-                Continue
-                <ArrowRight className="h-4 w-4" />
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {loading ? "Checking plan..." : "Continue"}
+                {!loading && <ArrowRight className="h-4 w-4" />}
               </button>
             </StepShell>
           )}
