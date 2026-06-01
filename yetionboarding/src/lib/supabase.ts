@@ -36,7 +36,9 @@ export interface YetiConfig {
 // Save a yeti config to Supabase
 export async function saveYetiConfig(config: Omit<YetiConfig, "created_at">): Promise<string> {
   if (!isSupabaseConfigured) {
-    throw new Error("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+    throw new Error(
+      "Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+    );
   }
 
   const { error } = await supabase.from("yeti_configs").insert(config);

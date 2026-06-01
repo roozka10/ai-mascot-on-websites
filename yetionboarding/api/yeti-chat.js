@@ -386,8 +386,7 @@ export default async function handler(req, res) {
         {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer":
-            req.headers.origin || "https://ai-mascot-on-websites.vercel.app",
+          "HTTP-Referer": req.headers.origin || "https://ai-mascot-on-websites.vercel.app",
         },
         process.env.OPENROUTER_MODEL || "openrouter/owl-alpha",
         systemPrompt,

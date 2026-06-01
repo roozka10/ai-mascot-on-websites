@@ -82,7 +82,10 @@ export function PricingSection({ standalone = false, onLogin }: PricingSectionPr
   }
 
   return (
-    <section id="pricing" className={standalone ? "px-4 py-10 sm:py-12" : "mx-auto w-full max-w-5xl px-4 py-12"}>
+    <section
+      id="pricing"
+      className={standalone ? "px-4 py-10 sm:py-12" : "mx-auto w-full max-w-5xl px-4 py-12"}
+    >
       <div className="mx-auto max-w-5xl">
         <div className="mx-auto mb-7 max-w-2xl text-center">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
@@ -119,15 +122,24 @@ export function PricingSection({ standalone = false, onLogin }: PricingSectionPr
                     Recommended
                   </div>
                 )}
-                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">{plan.name}</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  {plan.name}
+                </p>
                 <div className="mt-3 flex items-end gap-1">
-                  <span className="text-4xl font-black tracking-[-0.08em] text-foreground">${plan.price}</span>
+                  <span className="text-4xl font-black tracking-[-0.08em] text-foreground">
+                    ${plan.price}
+                  </span>
                   <span className="pb-1.5 text-xs font-bold text-muted-foreground">/month</span>
                 </div>
-                <p className="mt-3 min-h-10 text-xs leading-5 text-muted-foreground">{plan.description}</p>
+                <p className="mt-3 min-h-10 text-xs leading-5 text-muted-foreground">
+                  {plan.description}
+                </p>
                 <div className="mt-4 space-y-2.5">
                   {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2.5 text-xs font-bold text-foreground">
+                    <div
+                      key={feature}
+                      className="flex items-center gap-2.5 text-xs font-bold text-foreground"
+                    >
                       <span className="grid h-4.5 w-4.5 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                         <Check className="h-3 w-3" />
                       </span>

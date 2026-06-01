@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  ChevronRight,
-  Code2,
-  Menu,
-  ScanSearch,
-  Volume2,
-  X,
-} from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Code2, Menu, ScanSearch, Volume2, X } from "lucide-react";
 import { PricingSection } from "@/components/PricingSection";
 import yeti from "@/assets/yeti.png";
 
@@ -39,7 +30,11 @@ function HeroNav({ onStart }: LandingPageProps) {
         </button>
         <div className="hidden items-center gap-4 pl-6 text-[13px] md:flex">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="inline-flex items-center gap-2 text-[#0b0f1a] transition hover:text-[#7B6FE6]">
+            <a
+              key={item.href}
+              href={item.href}
+              className="inline-flex items-center gap-2 text-[#0b0f1a] transition hover:text-[#7B6FE6]"
+            >
               <span>{item.label}</span>
             </a>
           ))}
@@ -86,20 +81,40 @@ function HeroNav({ onStart }: LandingPageProps) {
 
 function HeroYetiDemo() {
   return (
-    <div id="hero-demo" className="relative mx-auto flex h-[420px] w-full max-w-[520px] items-center justify-center lg:h-[610px] lg:-translate-x-8 lg:-translate-y-8 lg:justify-end">
+    <div
+      id="hero-demo"
+      className="relative mx-auto flex h-[420px] w-full max-w-[520px] items-center justify-center lg:h-[610px] lg:-translate-x-8 lg:-translate-y-8 lg:justify-end"
+    >
       <div className="pointer-events-none absolute top-8 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.24em] text-[#7B6FE6] shadow-sm lg:top-14">
         Try demo
       </div>
-      <iframe title="Yeti Guide live demo" src={HERO_DEMO_WIDGET_SRC} allow="microphone" className="h-full w-full border-0 bg-transparent" />
+      <iframe
+        title="Yeti Guide live demo"
+        src={HERO_DEMO_WIDGET_SRC}
+        allow="microphone"
+        className="h-full w-full border-0 bg-transparent"
+      />
     </div>
   );
 }
 
 export function LandingPage({ onStart }: LandingPageProps) {
   const steps = [
-    { icon: <ScanSearch className="h-5 w-5" />, title: "Scan your site", text: "Paste your website and Yeti learns the important pages." },
-    { icon: <Volume2 className="h-5 w-5" />, title: "Add voice", text: "Optional voice notes teach Yeti your tone and extra details." },
-    { icon: <Code2 className="h-5 w-5" />, title: "Paste one script", text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it." },
+    {
+      icon: <ScanSearch className="h-5 w-5" />,
+      title: "Scan your site",
+      text: "Paste your website and Yeti learns the important pages.",
+    },
+    {
+      icon: <Volume2 className="h-5 w-5" />,
+      title: "Add voice",
+      text: "Optional voice notes teach Yeti your tone and extra details.",
+    },
+    {
+      icon: <Code2 className="h-5 w-5" />,
+      title: "Paste one script",
+      text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it.",
+    },
   ];
 
   const takes = [
@@ -154,13 +169,21 @@ export function LandingPage({ onStart }: LandingPageProps) {
                 </div>
                 <h1
                   className="mt-5 font-medium text-[#0b0f1a] sm:mt-6"
-                  style={{ fontSize: "clamp(36px, 8vw, 72px)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
+                  style={{
+                    fontSize: "clamp(36px, 8vw, 72px)",
+                    lineHeight: 1.05,
+                    letterSpacing: "-0.02em",
+                  }}
                 >
                   Voice guides for{" "}
-                <span
-                  className="text-[#7B6FE6]"
-                  style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400 }}
-                >
+                  <span
+                    className="text-[#7B6FE6]"
+                    style={{
+                      fontFamily: "'Instrument Serif', serif",
+                      fontStyle: "italic",
+                      fontWeight: 400,
+                    }}
+                  >
                     websites
                   </span>
                   <br />
@@ -190,148 +213,171 @@ export function LandingPage({ onStart }: LandingPageProps) {
       </section>
 
       <div className="cloud-section-bg">
-      <section id="how-it-works" className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,oklch(0.30_0.075_285),oklch(0.18_0.02_270))] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <p className="inline-flex rounded-full bg-white/12 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                How it works
-              </p>
-              <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                Three steps. No chatbot ceremony.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-white/68">
-                Yeti is made to install fast, learn fast, and start helping without a 19-step onboarding ritual.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {steps.map((step, index) => (
-                <article key={step.title} className="rounded-[1.5rem] border border-white/12 bg-white/[0.08] p-5">
-                  <div className="flex items-start gap-4">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-sm font-black text-[oklch(0.18_0.02_270)]">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="text-lg font-black tracking-tight">{step.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-white/68">{step.text}</p>
+        <section id="how-it-works" className="mx-auto w-full max-w-6xl px-5 py-16">
+          <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,oklch(0.30_0.075_285),oklch(0.18_0.02_270))] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p className="inline-flex rounded-full bg-white/12 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                  How it works
+                </p>
+                <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                  Three steps. No chatbot ceremony.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-white/68">
+                  Yeti is made to install fast, learn fast, and start helping without a 19-step
+                  onboarding ritual.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {steps.map((step, index) => (
+                  <article
+                    key={step.title}
+                    className="rounded-[1.5rem] border border-white/12 bg-white/[0.08] p-5"
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-sm font-black text-[oklch(0.18_0.02_270)]">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <h3 className="text-lg font-black tracking-tight">{step.title}</h3>
+                        <p className="mt-1 text-sm leading-6 text-white/68">{step.text}</p>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="compare" className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">The clean comparison</p>
-            <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-              The choice is clear.
-            </h2>
-            <p className="mt-4 text-base leading-7 text-muted-foreground">
-              Yeti feels like a guide because it learns your site, speaks out loud, and keeps answers short.
-            </p>
-          </div>
-          <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-white shadow-[0_25px_90px_-55px_rgba(15,23,42,0.45)]">
-            <div className="grid grid-cols-[1.35fr_0.75fr_0.75fr] bg-[oklch(0.20_0.015_270)] text-sm font-black text-white">
-              <div className="px-4 py-4 md:px-6">Feature</div>
-              <div className="px-3 py-4 text-center md:px-5">Yeti Guide</div>
-              <div className="px-3 py-4 text-center md:px-5">Old chatbot</div>
+        <section id="compare" className="mx-auto w-full max-w-6xl px-5 py-16">
+          <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
+                The clean comparison
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                The choice is clear.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-muted-foreground">
+                Yeti feels like a guide because it learns your site, speaks out loud, and keeps
+                answers short.
+              </p>
             </div>
-            {comparisonRows.map((row) => (
-              <div key={row.label} className="grid grid-cols-[1.35fr_0.75fr_0.75fr] border-t border-white text-sm">
-                <div className="bg-muted/40 px-4 py-4 font-bold text-foreground md:px-6">{row.label}</div>
-                <div className="grid place-items-center bg-secondary/35 px-3 py-4 md:px-5">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground">
-                    <Check className="h-4 w-4" />
-                  </span>
-                </div>
-                <div className="grid place-items-center bg-red-50 px-3 py-4 md:px-5">
-                  {row.chatbot ? (
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/80 text-primary-foreground">
+            <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-white shadow-[0_25px_90px_-55px_rgba(15,23,42,0.45)]">
+              <div className="grid grid-cols-[1.35fr_0.75fr_0.75fr] bg-[oklch(0.20_0.015_270)] text-sm font-black text-white">
+                <div className="px-4 py-4 md:px-6">Feature</div>
+                <div className="px-3 py-4 text-center md:px-5">Yeti Guide</div>
+                <div className="px-3 py-4 text-center md:px-5">Old chatbot</div>
+              </div>
+              {comparisonRows.map((row) => (
+                <div
+                  key={row.label}
+                  className="grid grid-cols-[1.35fr_0.75fr_0.75fr] border-t border-white text-sm"
+                >
+                  <div className="bg-muted/40 px-4 py-4 font-bold text-foreground md:px-6">
+                    {row.label}
+                  </div>
+                  <div className="grid place-items-center bg-secondary/35 px-3 py-4 md:px-5">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-primary-foreground">
                       <Check className="h-4 w-4" />
                     </span>
-                  ) : (
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-red-400 text-white">
-                      <X className="h-4 w-4" />
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <PricingSection onLogin={onStart} />
-
-      <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
-                Honest takes
-              </p>
-              <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                Websites need guides, not louder chatbots.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-white/68">
-                The point is not to add another widget. The point is to make getting help feel effortless.
-              </p>
-            </div>
-            <div className="space-y-3">
-              {takes.map((take, index) => (
-                <article key={take.title} className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5">
-                  <div className="flex items-start gap-4">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="text-lg font-black tracking-tight">{take.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-white/68">{take.text}</p>
-                    </div>
                   </div>
-                </article>
+                  <div className="grid place-items-center bg-red-50 px-3 py-4 md:px-5">
+                    {row.chatbot ? (
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/80 text-primary-foreground">
+                        <Check className="h-4 w-4" />
+                      </span>
+                    ) : (
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-red-400 text-white">
+                        <X className="h-4 w-4" />
+                      </span>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="mission" className="mx-auto w-full max-w-6xl px-5 py-16">
-        <div className="grid items-center gap-8 rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">The mission</p>
-            <h2 className="mt-3 text-4xl font-black tracking-[-0.05em]">
-              We are fixing the industry everyone quietly hates.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-white/68">
-              Website help should feel like talking to someone who knows the place, not wrestling
-              a popup that asks for your email before answering anything.
-            </p>
+        <PricingSection onLogin={onStart} />
+
+        <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
+          <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <p className="inline-flex rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                  Honest takes
+                </p>
+                <h2 className="mt-5 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+                  Websites need guides, not louder chatbots.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-white/68">
+                  The point is not to add another widget. The point is to make getting help feel
+                  effortless.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {takes.map((take, index) => (
+                  <article
+                    key={take.title}
+                    className="rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-5"
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-sm font-black text-primary-foreground">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <h3 className="text-lg font-black tracking-tight">{take.title}</h3>
+                        <p className="mt-1 text-sm leading-6 text-white/68">{take.text}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
-          <img src={yeti} alt="Yeti mascot" className="mx-auto h-44 w-44 object-contain drop-shadow-2xl" />
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto w-full max-w-4xl px-5 py-16 text-center">
-        <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-          Stop making visitors type into tiny chatbot boxes.
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-          Build a voice-first Yeti that learns your site, talks like a guide, and helps people faster.
-        </p>
-        <button
-          type="button"
-          onClick={onStart}
-          className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-[0_22px_55px_-26px_rgba(123,111,230,0.9)] transition hover:bg-primary/90"
-        >
-          Create your Yeti
-          <ArrowRight className="h-4 w-4" />
-        </button>
-      </section>
+        <section id="mission" className="mx-auto w-full max-w-6xl px-5 py-16">
+          <div className="grid items-center gap-8 rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-secondary">
+                The mission
+              </p>
+              <h2 className="mt-3 text-4xl font-black tracking-[-0.05em]">
+                We are fixing the industry everyone quietly hates.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-white/68">
+                Website help should feel like talking to someone who knows the place, not wrestling
+                a popup that asks for your email before answering anything.
+              </p>
+            </div>
+            <img
+              src={yeti}
+              alt="Yeti mascot"
+              className="mx-auto h-44 w-44 object-contain drop-shadow-2xl"
+            />
+          </div>
+        </section>
+
+        <section className="mx-auto w-full max-w-4xl px-5 py-16 text-center">
+          <h2 className="text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+            Stop making visitors type into tiny chatbot boxes.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            Build a voice-first Yeti that learns your site, talks like a guide, and helps people
+            faster.
+          </p>
+          <button
+            type="button"
+            onClick={onStart}
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-[0_22px_55px_-26px_rgba(123,111,230,0.9)] transition hover:bg-primary/90"
+          >
+            Create your Yeti
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </section>
       </div>
     </main>
   );
