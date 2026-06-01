@@ -2,7 +2,8 @@ import dns from "node:dns/promises";
 import net from "node:net";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const HUGGINGFACE_URL = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
+const HUGGINGFACE_URL =
+  "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
 
 const FALLBACK_QUESTIONS = [
   "What are 3 real questions visitors ask that your landing page does not already answer?",
@@ -33,10 +34,7 @@ function isPrivateIp(address) {
 
   const lower = address.toLowerCase();
   return (
-    lower === "::1" ||
-    lower.startsWith("fc") ||
-    lower.startsWith("fd") ||
-    lower.startsWith("fe80:")
+    lower === "::1" || lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80:")
   );
 }
 
@@ -57,11 +55,7 @@ function normalizeWebsiteUrl(input) {
 
 async function assertUrlSafe(url) {
   const hostname = url.hostname.toLowerCase();
-  if (
-    hostname === "localhost" ||
-    hostname.endsWith(".localhost") ||
-    hostname.endsWith(".local")
-  ) {
+  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
     throw new Error("Unsafe URL");
   }
 
@@ -113,7 +107,7 @@ function cleanText(value) {
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, "\"")
+    .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
@@ -136,7 +130,10 @@ function summarizeWebsite(html, url, businessName) {
   const buttons = matchAllText(html, /<(?:button|a)[^>]*>([\s\S]{2,80}?)<\/(?:button|a)>/gi)
     .filter((text) => text.length <= 60)
     .slice(0, 10);
-  const paragraphs = matchAllText(html, /<(?:p|li)[^>]*>([\s\S]{40,320}?)<\/(?:p|li)>/gi).slice(0, 12);
+  const paragraphs = matchAllText(html, /<(?:p|li)[^>]*>([\s\S]{40,320}?)<\/(?:p|li)>/gi).slice(
+    0,
+    12,
+  );
 
   return [
     `Business name typed by owner: ${businessName || "Unknown"}`,
@@ -159,11 +156,26 @@ function getBusinessLabel(url, businessName, websiteSummary) {
 
 function getWebsiteSignals(websiteSummary) {
   return {
-    pricing: /(\$\s?\d|\bprice\b|\bpricing\b|\bcost\b|\bplan\b|\bpackage\b|\btrial\b|\bfree\b|\bsubscription\b|\bper month\b)/i.test(websiteSummary),
-    contact: /(\bcontact\b|\bemail\b|\bphone\b|\bcall\b|\bmessage\b|\bsupport\b|\bchat\b|\bhelp\b)/i.test(websiteSummary),
-    booking: /(\bbook\b|\bschedule\b|\bappointment\b|\bdemo\b|\bcheckout\b|\bsign up\b|\bstart\b|\bget started\b|\border\b|\bbuy\b)/i.test(websiteSummary),
-    hours: /(\bhours\b|\bopen\b|\bclosed\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|\bsat\b|\bsun\b|\b24\/7\b|\bresponse time\b)/i.test(websiteSummary),
-    policies: /(\brefund\b|\bcancel\b|\breturn\b|\bprivacy\b|\bterms\b|\bguarantee\b|\bwarranty\b|\bpolicy\b|\bsecure\b)/i.test(websiteSummary),
+    pricing:
+      /(\$\s?\d|\bprice\b|\bpricing\b|\bcost\b|\bplan\b|\bpackage\b|\btrial\b|\bfree\b|\bsubscription\b|\bper month\b)/i.test(
+        websiteSummary,
+      ),
+    contact:
+      /(\bcontact\b|\bemail\b|\bphone\b|\bcall\b|\bmessage\b|\bsupport\b|\bchat\b|\bhelp\b)/i.test(
+        websiteSummary,
+      ),
+    booking:
+      /(\bbook\b|\bschedule\b|\bappointment\b|\bdemo\b|\bcheckout\b|\bsign up\b|\bstart\b|\bget started\b|\border\b|\bbuy\b)/i.test(
+        websiteSummary,
+      ),
+    hours:
+      /(\bhours\b|\bopen\b|\bclosed\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|\bsat\b|\bsun\b|\b24\/7\b|\bresponse time\b)/i.test(
+        websiteSummary,
+      ),
+    policies:
+      /(\brefund\b|\bcancel\b|\breturn\b|\bprivacy\b|\bterms\b|\bguarantee\b|\bwarranty\b|\bpolicy\b|\bsecure\b)/i.test(
+        websiteSummary,
+      ),
   };
 }
 
@@ -177,7 +189,9 @@ function getContextualQuestions(url, businessName, websiteSummary) {
   ];
 
   if (!signals.pricing) {
-    questions.push(`What prices, plans, free trials, or quote details should Yeti know for ${label}?`);
+    questions.push(
+      `What prices, plans, free trials, or quote details should Yeti know for ${label}?`,
+    );
   }
 
   if (!signals.booking) {
@@ -189,14 +203,20 @@ function getContextualQuestions(url, businessName, websiteSummary) {
   }
 
   if (!signals.hours) {
-    questions.push(`Are there hours, response times, or availability limits Yeti should mention for ${label}?`);
+    questions.push(
+      `Are there hours, response times, or availability limits Yeti should mention for ${label}?`,
+    );
   }
 
   if (!signals.policies) {
-    questions.push(`What refund, cancellation, privacy, guarantee, or safety rules should Yeti explain for ${label}?`);
+    questions.push(
+      `What refund, cancellation, privacy, guarantee, or safety rules should Yeti explain for ${label}?`,
+    );
   }
 
-  questions.push(`What tone should Yeti use for ${label}, and what should it never promise visitors?`);
+  questions.push(
+    `What tone should Yeti use for ${label}, and what should it never promise visitors?`,
+  );
 
   return questions.slice(0, 5);
 }
@@ -206,7 +226,10 @@ function asksAboutKnownWebsiteFact(question, websiteSummary) {
   const checks = [
     [signals.pricing, /\b(price|pricing|cost|plan|package|trial|subscription|offer)\b/i],
     [signals.contact, /\b(contact|email|phone|call|message|support)\b/i],
-    [signals.booking, /\b(book|schedule|appointment|demo|checkout|sign up|get started|order|buy)\b/i],
+    [
+      signals.booking,
+      /\b(book|schedule|appointment|demo|checkout|sign up|get started|order|buy)\b/i,
+    ],
     [signals.hours, /\b(hours|open|closed|availability|response time)\b/i],
     [signals.policies, /\b(refund|cancel|return|privacy|terms|guarantee|warranty|policy)\b/i],
   ];
@@ -222,7 +245,9 @@ function isGenericQuestion(question, url, businessName, websiteSummary) {
   if (label && lower.includes(label)) return false;
   if (domain && lower.includes(domain)) return false;
 
-  return /your (business|company|customers|website|product|service)|what do you sell|who is it for|common question/i.test(question);
+  return /your (business|company|customers|website|product|service)|what do you sell|who is it for|common question/i.test(
+    question,
+  );
 }
 
 function cleanQuestion(value) {
@@ -329,7 +354,9 @@ export default async function handler(req, res) {
   }
 
   const url = normalizeWebsiteUrl(req.body?.url);
-  const businessName = String(req.body?.businessName || "").trim().slice(0, 120);
+  const businessName = String(req.body?.businessName || "")
+    .trim()
+    .slice(0, 120);
   if (!url) {
     res.status(400).json({ error: "Invalid website URL", questions: FALLBACK_QUESTIONS });
     return;

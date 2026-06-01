@@ -38,13 +38,16 @@ export function FeatureRequestButton() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const speechSupported =
-    typeof window !== "undefined" && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+    typeof window !== "undefined" &&
+    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
     let active = true;
-    const applySession = (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
+    const applySession = (
+      session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"],
+    ) => {
       if (!active) return;
       setIsSignedIn(Boolean(session));
       setAccessToken(session?.access_token || "");
@@ -215,7 +218,9 @@ export function FeatureRequestButton() {
                     type="button"
                     onClick={() => setMode("voice")}
                     className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-black transition ${
-                      mode === "voice" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground"
+                      mode === "voice"
+                        ? "bg-white text-foreground shadow-sm"
+                        : "text-muted-foreground"
                     }`}
                   >
                     <Mic className="h-4 w-4" />
@@ -228,7 +233,9 @@ export function FeatureRequestButton() {
                       setMode("text");
                     }}
                     className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-black transition ${
-                      mode === "text" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground"
+                      mode === "text"
+                        ? "bg-white text-foreground shadow-sm"
+                        : "text-muted-foreground"
                     }`}
                   >
                     <Keyboard className="h-4 w-4" />
@@ -250,7 +257,11 @@ export function FeatureRequestButton() {
                       {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
                     </button>
                     <p className="mt-3 text-xs font-bold text-muted-foreground">
-                      {listening ? "Listening..." : speechSupported ? "Tap the mic and say your idea" : "Mic not supported here"}
+                      {listening
+                        ? "Listening..."
+                        : speechSupported
+                          ? "Tap the mic and say your idea"
+                          : "Mic not supported here"}
                     </p>
                   </div>
                 ) : null}
@@ -274,7 +285,10 @@ export function FeatureRequestButton() {
                 )}
 
                 <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                  Sending from: <span className="text-foreground">{accountEmail || contactEmail || "Add your email"}</span>
+                  Sending from:{" "}
+                  <span className="text-foreground">
+                    {accountEmail || contactEmail || "Add your email"}
+                  </span>
                 </p>
                 {error && <p className="mt-3 text-sm font-bold text-red-600">{error}</p>}
 

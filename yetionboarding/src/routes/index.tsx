@@ -7,7 +7,10 @@ export const Route = createFileRoute("/")({
       { title: "Yeti — Set up your AI guide" },
       { name: "description", content: "Set up your Yeti AI website guide in three quick steps." },
       { property: "og:title", content: "Yeti — Set up your AI guide" },
-      { property: "og:description", content: "Set up your Yeti AI website guide in three quick steps." },
+      {
+        property: "og:description",
+        content: "Set up your Yeti AI website guide in three quick steps.",
+      },
     ],
   }),
   component: Onboarding,

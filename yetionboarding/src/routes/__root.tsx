@@ -73,10 +73,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Yeti Guide" },
-      { name: "description", content: "AI mascot for your website — train a friendly yeti that knows your business" },
+      {
+        name: "description",
+        content: "AI mascot for your website — train a friendly yeti that knows your business",
+      },
       { name: "author", content: "Yeti Guide" },
       { property: "og:title", content: "Yeti Guide" },
-      { property: "og:description", content: "AI mascot for your website — train a friendly yeti that knows your business" },
+      {
+        property: "og:description",
+        content: "AI mascot for your website — train a friendly yeti that knows your business",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@YetiGuide" },

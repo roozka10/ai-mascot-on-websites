@@ -64,8 +64,7 @@ async function fetchSetupCredits(accessToken: string) {
   const websitesLimit = Number(data?.credits?.websites_limit || 0);
   const status = data?.subscription?.status;
   const hasActivePlan =
-    (Boolean(data?.subscription) && ACTIVE_PLAN_STATUSES.has(status)) ||
-    websitesLimit > 0;
+    (Boolean(data?.subscription) && ACTIVE_PLAN_STATUSES.has(status)) || websitesLimit > 0;
 
   return { hasActivePlan, websitesUsed, websitesLimit };
 }
@@ -87,7 +86,9 @@ async function fetchPersonalizedQuestions(businessName: string, url: string) {
     });
     const data = await response.json().catch(() => ({}));
     const questions = Array.isArray(data?.questions)
-      ? data.questions.filter((question: unknown) => typeof question === "string" && question.trim())
+      ? data.questions.filter(
+          (question: unknown) => typeof question === "string" && question.trim(),
+        )
       : [];
 
     if (!response.ok || questions.length < 5) {
@@ -169,10 +170,7 @@ function Mascot({ size = 72 }: { size?: number }) {
 
 function StepShell({ step, children }: { step: number; children: React.ReactNode }) {
   return (
-    <div
-      key={step}
-      className="animate-in fade-in slide-in-from-bottom-2 duration-500"
-    >
+    <div key={step} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
       {children}
     </div>
   );
@@ -181,9 +179,7 @@ function StepShell({ step, children }: { step: number; children: React.ReactNode
 function QuestionLoadingGame() {
   return (
     <div className="fixed inset-0 z-[60] flex flex-col items-center justify-start bg-white/80 px-4 pt-28 text-center backdrop-blur-md">
-      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
-        Wait...
-      </p>
+      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">Wait...</p>
       <h2 className="mt-2 max-w-sm text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
         Reading your website
       </h2>
@@ -207,7 +203,11 @@ function LuckySpinPopup({
   onClose,
 }: {
   spinning: boolean;
-  reward: { websites_granted: number; questions_granted: number; reward_label?: string | null } | null;
+  reward: {
+    websites_granted: number;
+    questions_granted: number;
+    reward_label?: string | null;
+  } | null;
   message?: string;
   onSpin: () => void;
   onClose: () => void;
@@ -239,7 +239,9 @@ function LuckySpinPopup({
               style={{
                 background:
                   "conic-gradient(from -90deg,#f9a8d4 0deg 60deg,#fdf2f8 60deg 120deg,#c4b5fd 120deg 180deg,#fbcfe8 180deg 240deg,#ede9fe 240deg 300deg,#f472b6 300deg 360deg)",
-                animation: spinning ? "yeti-prize-spin 1.45s cubic-bezier(.18,.72,.16,1) infinite" : undefined,
+                animation: spinning
+                  ? "yeti-prize-spin 1.45s cubic-bezier(.18,.72,.16,1) infinite"
+                  : undefined,
               }}
             >
               {SPIN_REWARDS.map((item, index) => (
@@ -274,7 +276,10 @@ function LuckySpinPopup({
             </p>
             <div className="mt-3 grid gap-2">
               {SPIN_REWARDS.map((item) => (
-                <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm"
+                >
                   <div>
                     <p className="text-xs font-black text-foreground">{item.label}</p>
                     <p className="text-[11px] font-bold text-muted-foreground">
@@ -296,12 +301,16 @@ function LuckySpinPopup({
               {reward.reward_label || "Yeti Prize"}
             </p>
             <p className="mt-1 text-lg font-black text-foreground">
-              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"} and +{reward.questions_granted.toLocaleString()} AI answers
+              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"}{" "}
+              and +{reward.questions_granted.toLocaleString()} AI answers
             </p>
           </div>
         ) : (
           <p className="mt-4 text-sm font-bold text-foreground">
-            {message || (spinning ? "Yeti is spinning the mountain wheel..." : "Press spin once to get your prize.")}
+            {message ||
+              (spinning
+                ? "Yeti is spinning the mountain wheel..."
+                : "Press spin once to get your prize.")}
           </p>
         )}
 
@@ -407,7 +416,8 @@ function extractPageScan(html: string, pageUrl: string, bizName: string): PageSc
 
   const title = cleanText(doc.querySelector("title")?.textContent || bizName);
   const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
-  const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute("content") || "";
+  const ogDesc =
+    doc.querySelector('meta[property="og:description"]')?.getAttribute("content") || "";
 
   const internalUrls = new Set<string>();
   doc.querySelectorAll("a[href]").forEach((a) => {
@@ -426,10 +436,12 @@ function extractPageScan(html: string, pageUrl: string, bizName: string): PageSc
   });
 
   const snippets: string[] = [];
-  doc.querySelectorAll("main p, main li, section p, section li, article p, article li").forEach((el) => {
-    const text = cleanText(el.textContent || "");
-    if (text.length >= 45 && text.length <= 260) snippets.push(text);
-  });
+  doc
+    .querySelectorAll("main p, main li, section p, section li, article p, article li")
+    .forEach((el) => {
+      const text = cleanText(el.textContent || "");
+      if (text.length >= 45 && text.length <= 260) snippets.push(text);
+    });
 
   const structuredSnippets: string[] = [];
   doc.querySelectorAll('script[type="application/ld+json"]').forEach((s) => {
@@ -440,7 +452,8 @@ function extractPageScan(html: string, pageUrl: string, bizName: string): PageSc
         if (item.name) structuredSnippets.push(`Name: ${item.name}`);
         if (item.description) structuredSnippets.push(`Description: ${item.description}`);
         if (item.telephone) structuredSnippets.push(`Phone: ${item.telephone}`);
-        if (item.address?.streetAddress) structuredSnippets.push(`Address: ${item.address.streetAddress}`);
+        if (item.address?.streetAddress)
+          structuredSnippets.push(`Address: ${item.address.streetAddress}`);
       });
     } catch {
       /* skip */
@@ -522,9 +535,7 @@ function buildVoicePrompt({
     })
     .join("\n");
 
-  const ownerNotes = transcript.trim()
-    ? `\nOwner notes: ${transcript.trim().slice(0, 1200)}`
-    : "";
+  const ownerNotes = transcript.trim() ? `\nOwner notes: ${transcript.trim().slice(0, 1200)}` : "";
 
   return `You are Yeti, the fast website guide for ${name}. Use ONLY this compact site knowledge.
 
@@ -546,10 +557,22 @@ Rules:
 function GoogleIcon() {
   return (
     <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.15v2.84C3.96 20.53 7.68 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.15C1.42 8.53 1 10.21 1 12s.42 3.47 1.15 4.94l3.69-2.84z" />
-      <path fill="#EA4335" d="M12 5.37c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.96 3.47 2.15 7.06L5.84 9.9C6.71 7.3 9.14 5.37 12 5.37z" />
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.15v2.84C3.96 20.53 7.68 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.15C1.42 8.53 1 10.21 1 12s.42 3.47 1.15 4.94l3.69-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.37c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.68 1 3.96 3.47 2.15 7.06L5.84 9.9C6.71 7.3 9.14 5.37 12 5.37z"
+      />
     </svg>
   );
 }
@@ -722,7 +745,10 @@ function AccountPage({
         }
       })
       .catch((error) => {
-        if (active) setSubscriptionError(error instanceof Error ? error.message : "Could not load your plan.");
+        if (active)
+          setSubscriptionError(
+            error instanceof Error ? error.message : "Could not load your plan.",
+          );
       })
       .finally(() => {
         if (active) setSubscriptionLoading(false);
@@ -760,7 +786,7 @@ function AccountPage({
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data?.error || "Could not cancel your plan.");
 
-      setSubscription((current) => current ? { ...current, status: "canceled" } : current);
+      setSubscription((current) => (current ? { ...current, status: "canceled" } : current));
       setShowCancel(false);
       setCancelReason("");
       setCancelMessage("Your plan has been canceled.");
@@ -775,8 +801,8 @@ function AccountPage({
   const planName = isCanceled
     ? "Buy a plan"
     : subscription?.plan
-    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
-    : "No paid plan yet";
+      ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
+      : "No paid plan yet";
   const websiteCredits = credits
     ? `${credits.websites_used}/${credits.websites_limit || "-"}`
     : "-";
@@ -797,9 +823,7 @@ function AccountPage({
         <h1 className="mt-2 text-center text-2xl font-black tracking-[-0.05em] text-foreground">
           Your Yeti workspace
         </h1>
-        <p className="mt-2 text-center text-xs leading-5 text-muted-foreground">
-          Signed in as
-        </p>
+        <p className="mt-2 text-center text-xs leading-5 text-muted-foreground">Signed in as</p>
         <p className="mx-auto mt-2 max-w-sm rounded-2xl bg-muted px-3 py-2 text-center text-xs font-bold text-foreground">
           {email || "Unknown email"}
         </p>
@@ -807,7 +831,9 @@ function AccountPage({
         <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Current plan
+              </p>
               <h2 className="mt-1.5 text-2xl font-black tracking-[-0.05em] text-foreground">
                 {subscriptionLoading ? "Loading..." : planName}
               </h2>
@@ -837,16 +863,16 @@ function AccountPage({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Website credits</p>
-              <p className="mt-1.5 text-xl font-black text-foreground">
-                {websiteCredits}
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Website credits
               </p>
+              <p className="mt-1.5 text-xl font-black text-foreground">{websiteCredits}</p>
             </div>
             <div className="rounded-2xl bg-white px-4 py-3 shadow-sm sm:col-span-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">AI answers this month</p>
-              <p className="mt-1.5 text-xl font-black text-foreground">
-                {questionCredits}
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                AI answers this month
               </p>
+              <p className="mt-1.5 text-xl font-black text-foreground">{questionCredits}</p>
             </div>
           </div>
 
@@ -942,7 +968,9 @@ export default function Onboarding() {
   const [transcript, setTranscript] = useState("");
   const [interimTranscript, setInterimTranscript] = useState("");
   const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
-  const [briefAnswers, setBriefAnswers] = useState<string[]>(() => BUSINESS_BRIEF_QUESTIONS.map(() => ""));
+  const [briefAnswers, setBriefAnswers] = useState<string[]>(() =>
+    BUSINESS_BRIEF_QUESTIONS.map(() => ""),
+  );
   const [currentBriefQuestionIndex, setCurrentBriefQuestionIndex] = useState(0);
   const [showLuckySpin, setShowLuckySpin] = useState(false);
   const [spinLoading, setSpinLoading] = useState(false);
@@ -965,7 +993,9 @@ export default function Onboarding() {
 
   const canContinue = name.trim().length > 0 && site.trim().length > 0;
   const currentBriefQuestion =
-    briefQuestions[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[currentBriefQuestionIndex] || BUSINESS_BRIEF_QUESTIONS[0];
+    briefQuestions[currentBriefQuestionIndex] ||
+    BUSINESS_BRIEF_QUESTIONS[currentBriefQuestionIndex] ||
+    BUSINESS_BRIEF_QUESTIONS[0];
   const currentBriefAnswer = briefAnswers[currentBriefQuestionIndex] || "";
   const isGeneratingQuestions = loading && statusText.toLowerCase().includes("questions");
   const goToNextBriefQuestion = () => {
@@ -1050,7 +1080,8 @@ export default function Onboarding() {
         const answerText = finalText.trim();
         setBriefAnswers((current) => {
           const next = [...current];
-          next[currentBriefQuestionIndex] = `${next[currentBriefQuestionIndex] || ""} ${answerText}`.trim();
+          next[currentBriefQuestionIndex] =
+            `${next[currentBriefQuestionIndex] || ""} ${answerText}`.trim();
           return next;
         });
       }
@@ -1063,7 +1094,7 @@ export default function Onboarding() {
       setError(
         event.error === "not-allowed"
           ? "Microphone access was blocked. Please allow microphone access and try again."
-          : "Speech recognition stopped. Please try the mic again."
+          : "Speech recognition stopped. Please try the mic again.",
       );
     };
 
@@ -1134,7 +1165,9 @@ export default function Onboarding() {
 
   const startListening = () => {
     if (!recognitionRef.current) {
-      setError("Speech recognition is not available in this browser. You can type the business details instead.");
+      setError(
+        "Speech recognition is not available in this browser. You can type the business details instead.",
+      );
       return;
     }
 
@@ -1229,11 +1262,16 @@ export default function Onboarding() {
 
       const scans = await scanWebsite(url, name, setStatusText);
       if (!scans.length && !transcript.trim()) {
-        setError("Yeti could not scan this website. Add a short voice note or try the full https:// URL.");
+        setError(
+          "Yeti could not scan this website. Add a short voice note or try the full https:// URL.",
+        );
         return;
       }
 
-      const allPages = scans.map((scan) => scan.path).filter(Boolean).slice(0, 20);
+      const allPages = scans
+        .map((scan) => scan.path)
+        .filter(Boolean)
+        .slice(0, 20);
 
       setStatusText("Saving your Yeti...");
       const answerNotes = briefQuestions
@@ -1304,12 +1342,7 @@ export default function Onboarding() {
   };
 
   const nav = (
-    <OnboardingNav
-      email={email}
-      view={view}
-      onSetup={openSetup}
-      onAccount={openAccount}
-    />
+    <OnboardingNav email={email} view={view} onSetup={openSetup} onAccount={openAccount} />
   );
 
   if (checkingAuth) {
@@ -1325,13 +1358,7 @@ export default function Onboarding() {
   }
 
   if (!session) {
-    return (
-      <LoginScreen
-        onGoogle={signInWithGoogle}
-        loading={authLoading}
-        error={error}
-      />
-    );
+    return <LoginScreen onGoogle={signInWithGoogle} loading={authLoading} error={error} />;
   }
 
   if (view === "account") {
@@ -1349,115 +1376,138 @@ export default function Onboarding() {
 
     return (
       <>
-      {nav}
-      <main className="min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
-        <div className="w-full max-w-[1040px] mx-auto">
-          <StepShell step={3}>
-            <Stepper step={step} />
+        {nav}
+        <main className="min-h-screen bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-10 pt-28">
+          <div className="w-full max-w-[1040px] mx-auto">
+            <StepShell step={3}>
+              <Stepper step={step} />
 
-            <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[0.9fr_1.1fr]">
-              <section className="rounded-3xl border border-border/50 bg-white p-7 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.35)] sm:p-9">
-                <Mascot size={70} />
-                <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                  Ready to install
-                </p>
-                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
-                  Add Yeti to any website
-                </h1>
-                <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                  Yeti will load the personality you just recorded, answer visitors with that business knowledge, and speak out loud on your site.
-                </p>
+              <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[0.9fr_1.1fr]">
+                <section className="rounded-3xl border border-border/50 bg-white p-7 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.35)] sm:p-9">
+                  <Mascot size={70} />
+                  <p className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    Ready to install
+                  </p>
+                  <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+                    Add Yeti to any website
+                  </h1>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                    Yeti will load the personality you just recorded, answer visitors with that
+                    business knowledge, and speak out loud on your site.
+                  </p>
 
-                <div className="mt-7 grid gap-3">
-                  {[
-                    "Copy the code on the right.",
-                    "Tell Cursor, Claude Code, Codex, or any coding agent: \"Add this widget script to my website footer, right before </body>.\"",
-                    "Publish the website. Yeti goes live.",
-                  ].map((text, index) => (
-                    <div key={text} className="flex items-center gap-3 rounded-2xl bg-muted/45 px-4 py-3 text-sm text-foreground">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                        {index + 1}
+                  <div className="mt-7 grid gap-3">
+                    {[
+                      "Copy the code on the right.",
+                      'Tell Cursor, Claude Code, Codex, or any coding agent: "Add this widget script to my website footer, right before </body>."',
+                      "Publish the website. Yeti goes live.",
+                    ].map((text, index) => (
+                      <div
+                        key={text}
+                        className="flex items-center gap-3 rounded-2xl bg-muted/45 px-4 py-3 text-sm text-foreground"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                          {index + 1}
+                        </span>
+                        <span>{text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-7 flex flex-wrap gap-2">
+                    {[
+                      { i: <ShieldCheck className="h-3.5 w-3.5" />, t: "One script" },
+                      { i: <Clock className="h-3.5 w-3.5" />, t: "2 minute install" },
+                      { i: <Globe className="h-3.5 w-3.5" />, t: "Any website" },
+                    ].map((p) => (
+                      <span
+                        key={p.t}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1.5 text-xs font-medium text-primary"
+                      >
+                        {p.i} {p.t}
                       </span>
-                      <span>{text}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="mt-7 flex flex-wrap gap-2">
-                  {[
-                    { i: <ShieldCheck className="h-3.5 w-3.5" />, t: "One script" },
-                    { i: <Clock className="h-3.5 w-3.5" />, t: "2 minute install" },
-                    { i: <Globe className="h-3.5 w-3.5" />, t: "Any website" },
-                  ].map((p) => (
-                    <span
-                      key={p.t}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-3 py-1.5 text-xs font-medium text-primary"
+                  <div className="mt-8 flex gap-3">
+                    <button
+                      onClick={() => setStep(2)}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium text-muted-foreground transition hover:bg-muted"
                     >
-                      {p.i} {p.t}
-                    </span>
-                  ))}
-                </div>
+                      <ArrowLeft className="h-4 w-4" /> Back
+                    </button>
+                    <button
+                      onClick={() => {
+                        setStep(0);
+                        stopListening();
+                        setTranscript("");
+                        setInterimTranscript("");
+                        setBriefQuestions(BUSINESS_BRIEF_QUESTIONS);
+                        setBriefAnswers(BUSINESS_BRIEF_QUESTIONS.map(() => ""));
+                        setCurrentBriefQuestionIndex(0);
+                        setVoiceStarted(false);
+                        setSnippet("");
+                        setError("");
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20"
+                    >
+                      Train another site
+                    </button>
+                  </div>
+                </section>
 
-                <div className="mt-8 flex gap-3">
-                  <button
-                    onClick={() => setStep(2)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-medium text-muted-foreground transition hover:bg-muted"
-                  >
-                    <ArrowLeft className="h-4 w-4" /> Back
-                  </button>
-                  <button
-                    onClick={() => {
-                      setStep(0);
-                      stopListening();
-                      setTranscript("");
-                      setInterimTranscript("");
-                      setBriefQuestions(BUSINESS_BRIEF_QUESTIONS);
-                      setBriefAnswers(BUSINESS_BRIEF_QUESTIONS.map(() => ""));
-                      setCurrentBriefQuestionIndex(0);
-                      setVoiceStarted(false);
-                      setSnippet("");
-                      setError("");
-                    }}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20"
-                  >
-                    Train another site
-                  </button>
-                </div>
-              </section>
+                <section className="rounded-3xl border border-border/50 bg-card p-5 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.35)] sm:p-7">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                        Embed code
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Paste this once. No extra listener script needed.
+                      </p>
+                    </div>
+                    <button
+                      onClick={copy}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" /> Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-              <section className="rounded-3xl border border-border/50 bg-card p-5 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.35)] sm:p-7">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                      Embed code
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Paste this once. No extra listener script needed.
+                  <div className="mt-5 rounded-2xl bg-[oklch(0.18_0.02_280)] p-5 text-[oklch(0.95_0.02_295)]">
+                    <pre className="overflow-x-auto whitespace-pre font-mono text-xs leading-relaxed sm:text-sm">
+                      {displaySnippet}
+                    </pre>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-border/60 bg-white px-5 py-4">
+                    <p className="text-sm font-semibold text-foreground">Short install note</p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      You can paste this yourself, or tell your AI coding agent:{" "}
+                      <span className="font-medium text-foreground">
+                        "Add this Yeti widget script to my website footer before{" "}
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                          &lt;/body&gt;
+                        </code>
+                        ."
+                      </span>{" "}
+                      The <code className="rounded bg-muted px-1.5 py-0.5 text-xs">data-yeti</code>{" "}
+                      ID connects this site to the personality you recorded.
                     </p>
                   </div>
-                  <button
-                    onClick={copy}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition hover:bg-primary/90"
-                  >
-                    {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
-                  </button>
-                </div>
-
-                <div className="mt-5 rounded-2xl bg-[oklch(0.18_0.02_280)] p-5 text-[oklch(0.95_0.02_295)]">
-                  <pre className="overflow-x-auto whitespace-pre font-mono text-xs leading-relaxed sm:text-sm">{displaySnippet}</pre>
-                </div>
-
-                <div className="mt-5 rounded-2xl border border-border/60 bg-white px-5 py-4">
-                  <p className="text-sm font-semibold text-foreground">Short install note</p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    You can paste this yourself, or tell your AI coding agent: <span className="font-medium text-foreground">"Add this Yeti widget script to my website footer before <code className="rounded bg-muted px-1.5 py-0.5 text-xs">&lt;/body&gt;</code>."</span> The <code className="rounded bg-muted px-1.5 py-0.5 text-xs">data-yeti</code> ID connects this site to the personality you recorded.
-                  </p>
-                </div>
-              </section>
-            </div>
-          </StepShell>
-        </div>
-      </main>
+                </section>
+              </div>
+            </StepShell>
+          </div>
+        </main>
       </>
     );
   }
@@ -1466,100 +1516,101 @@ export default function Onboarding() {
   if (step === 2) {
     return (
       <>
-      {nav}
-      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-24">
-        <div className="mx-auto w-full max-w-[820px]">
-          <StepShell step={2}>
-            <Stepper step={step} />
+        {nav}
+        <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-6 pt-24">
+          <div className="mx-auto w-full max-w-[820px]">
+            <StepShell step={2}>
+              <Stepper step={step} />
 
-            <section className="rounded-[1.75rem] border border-border/60 bg-white/90 p-4 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] backdrop-blur sm:p-6">
-              <div className="flex flex-col items-center text-center">
-                <Mascot size={54} />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-                  Review answers
-                </p>
-                <h1 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
-                  Clean up what Yeti learned
-                </h1>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-                  Click any answer to edit it. Empty answers are okay, but better details make Yeti smarter.
-                </p>
-              </div>
+              <section className="rounded-[1.75rem] border border-border/60 bg-white/90 p-4 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.48)] backdrop-blur sm:p-6">
+                <div className="flex flex-col items-center text-center">
+                  <Mascot size={54} />
+                  <p className="mt-3 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+                    Review answers
+                  </p>
+                  <h1 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground sm:text-3xl">
+                    Clean up what Yeti learned
+                  </h1>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+                    Click any answer to edit it. Empty answers are okay, but better details make
+                    Yeti smarter.
+                  </p>
+                </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {briefQuestions.map((question, index) => (
-                  <label
-                    key={question}
-                    className={`${index === 0 ? "sm:col-span-2" : ""} block rounded-2xl border border-border/70 bg-white px-4 py-3 shadow-sm transition focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10`}
-                  >
-                    <span className="flex items-start gap-2 text-xs font-black leading-5 text-foreground">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">
-                        {index + 1}
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {briefQuestions.map((question, index) => (
+                    <label
+                      key={question}
+                      className={`${index === 0 ? "sm:col-span-2" : ""} block rounded-2xl border border-border/70 bg-white px-4 py-3 shadow-sm transition focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10`}
+                    >
+                      <span className="flex items-start gap-2 text-xs font-black leading-5 text-foreground">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] text-primary">
+                          {index + 1}
+                        </span>
+                        {question}
                       </span>
-                      {question}
-                    </span>
-                    <textarea
-                      value={briefAnswers[index] || ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setBriefAnswers((current) => {
-                          const next = [...current];
-                          next[index] = value;
-                          return next;
-                        });
-                      }}
-                      rows={2}
-                      placeholder="Type or edit this answer..."
-                      className="mt-2 min-h-16 w-full resize-none bg-transparent text-sm font-semibold leading-5 text-foreground outline-none placeholder:text-muted-foreground/60"
-                    />
-                  </label>
-                ))}
-              </div>
-
-              {error && (
-                <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
-                  {error}
+                      <textarea
+                        value={briefAnswers[index] || ""}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setBriefAnswers((current) => {
+                            const next = [...current];
+                            next[index] = value;
+                            return next;
+                          });
+                        }}
+                        rows={2}
+                        placeholder="Type or edit this answer..."
+                        className="mt-2 min-h-16 w-full resize-none bg-transparent text-sm font-semibold leading-5 text-foreground outline-none placeholder:text-muted-foreground/60"
+                      />
+                    </label>
+                  ))}
                 </div>
-              )}
 
-              {loading && statusText && (
-                <div className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {statusText}
+                {error && (
+                  <div className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                    {error}
+                  </div>
+                )}
+
+                {loading && statusText && (
+                  <div className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {statusText}
+                  </div>
+                )}
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-white/70 px-5 py-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:bg-white"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Back to questions
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveVoicePersonality}
+                    disabled={loading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving Yeti...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Save and get embed code
+                      </>
+                    )}
+                  </button>
                 </div>
-              )}
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-white/70 px-5 py-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:bg-white"
-                >
-                  <ArrowLeft className="h-4 w-4" /> Back to questions
-                </button>
-                <button
-                  type="button"
-                  onClick={saveVoicePersonality}
-                  disabled={loading}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving Yeti...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Save and get embed code
-                    </>
-                  )}
-                </button>
-              </div>
-            </section>
-          </StepShell>
-        </div>
-      </main>
+              </section>
+            </StepShell>
+          </div>
+        </main>
       </>
     );
   }
@@ -1568,199 +1619,210 @@ export default function Onboarding() {
   if (step === 1) {
     return (
       <>
-      {nav}
-      <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-5 pt-24">
-        <div className="w-full max-w-[560px] mx-auto">
-          <StepShell step={1}>
-            <Stepper step={step} />
+        {nav}
+        <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-4 pb-5 pt-24">
+          <div className="w-full max-w-[560px] mx-auto">
+            <StepShell step={1}>
+              <Stepper step={step} />
 
-            <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-start pt-3 text-center">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
-                {currentBriefQuestionIndex + 1}/{briefQuestions.length}
-              </p>
-              <h1 className="mt-2 w-full max-w-[760px] text-balance text-xl font-black leading-tight tracking-[-0.04em] text-foreground sm:text-2xl">
-                {currentBriefQuestion}
-              </h1>
-
-              <div className="mt-4 flex items-center justify-center gap-1.5">
-                {briefQuestions.map((question, index) => (
-                  <button
-                    key={question}
-                    type="button"
-                    onClick={() => setCurrentBriefQuestionIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentBriefQuestionIndex
-                        ? "w-8 bg-primary"
-                        : index < currentBriefQuestionIndex
-                          ? "w-3 bg-primary/50"
-                          : "w-3 bg-muted"
-                    }`}
-                    aria-label={`Show question ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              <div className="relative mt-8 flex items-center justify-center">
-                <div className="absolute h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
-                <img
-                  src={yeti}
-                  alt="Yeti mascot"
-                  className="relative z-10 w-[132px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[160px]"
-                />
-              </div>
-
-              <h1 className="sr-only">Tell Yeti about your business</h1>
-
-              <button
-                type="button"
-                onClick={listening ? stopListening : startListening}
-                aria-label={listening ? "Stop recording business details" : "Start recording business details"}
-                className={`mt-6 flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-foreground/90 shadow-[0_16px_38px_-22px_rgba(15,23,42,0.6)] transition-all duration-300 ${
-                  listening
-                    ? "bg-red-500 text-white ring-8 ring-red-500/10 hover:bg-red-600"
-                    : "bg-primary text-primary-foreground ring-8 ring-primary/15 hover:scale-[1.03] hover:bg-primary/90"
-                }`}
-              >
-                {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
-              </button>
-
-              <p className="mt-3 text-xs font-medium text-foreground/80">
-                {listening ? "Listening..." : "Tap the mic to answer"}
-              </p>
-              {currentBriefAnswer && (
-                <p className="mt-1 max-w-md truncate text-xs font-semibold text-primary">
-                  Answer saved
+              <div className="flex min-h-[calc(100dvh-112px)] flex-col items-center justify-start pt-3 text-center">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+                  {currentBriefQuestionIndex + 1}/{briefQuestions.length}
                 </p>
-              )}
+                <h1 className="mt-2 w-full max-w-[760px] text-balance text-xl font-black leading-tight tracking-[-0.04em] text-foreground sm:text-2xl">
+                  {currentBriefQuestion}
+                </h1>
 
-              {!speechSupported && (
-                <div className="mt-4 max-w-sm text-sm text-amber-700">
-                  Your browser does not support live speech recognition. Try Chrome, Edge, or Safari with microphone access.
+                <div className="mt-4 flex items-center justify-center gap-1.5">
+                  {briefQuestions.map((question, index) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => setCurrentBriefQuestionIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentBriefQuestionIndex
+                          ? "w-8 bg-primary"
+                          : index < currentBriefQuestionIndex
+                            ? "w-3 bg-primary/50"
+                            : "w-3 bg-muted"
+                      }`}
+                      aria-label={`Show question ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              )}
 
-              {error && (
-                <div className="mt-6 text-sm text-red-600">
-                  {error}
+                <div className="relative mt-8 flex items-center justify-center">
+                  <div className="absolute h-32 w-32 rounded-full bg-primary/15 blur-3xl" />
+                  <img
+                    src={yeti}
+                    alt="Yeti mascot"
+                    className="relative z-10 w-[132px] select-none drop-shadow-[0_20px_24px_rgba(15,23,42,0.14)] sm:w-[160px]"
+                  />
                 </div>
-              )}
 
-              {loading && statusText && (
-                <div className="mt-6 flex items-center justify-center gap-2 text-sm text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {statusText}
-                </div>
-              )}
+                <h1 className="sr-only">Tell Yeti about your business</h1>
 
-              <div className="mt-5 flex w-full gap-3">
                 <button
-                  onClick={() => {
-                    stopListening();
-                    setError("");
-                    setStep(0);
-                  }}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-white/70 px-5 py-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:bg-white"
+                  type="button"
+                  onClick={listening ? stopListening : startListening}
+                  aria-label={
+                    listening
+                      ? "Stop recording business details"
+                      : "Start recording business details"
+                  }
+                  className={`mt-6 flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-foreground/90 shadow-[0_16px_38px_-22px_rgba(15,23,42,0.6)] transition-all duration-300 ${
+                    listening
+                      ? "bg-red-500 text-white ring-8 ring-red-500/10 hover:bg-red-600"
+                      : "bg-primary text-primary-foreground ring-8 ring-primary/15 hover:scale-[1.03] hover:bg-primary/90"
+                  }`}
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back
+                  {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
                 </button>
-                <button
-                  onClick={goToNextBriefQuestion}
-                  disabled={loading}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground font-medium py-3 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                >
-                  {currentBriefQuestionIndex === briefQuestions.length - 1 ? "Review answers" : "Continue"}
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+
+                <p className="mt-3 text-xs font-medium text-foreground/80">
+                  {listening ? "Listening..." : "Tap the mic to answer"}
+                </p>
+                {currentBriefAnswer && (
+                  <p className="mt-1 max-w-md truncate text-xs font-semibold text-primary">
+                    Answer saved
+                  </p>
+                )}
+
+                {!speechSupported && (
+                  <div className="mt-4 max-w-sm text-sm text-amber-700">
+                    Your browser does not support live speech recognition. Try Chrome, Edge, or
+                    Safari with microphone access.
+                  </div>
+                )}
+
+                {error && <div className="mt-6 text-sm text-red-600">{error}</div>}
+
+                {loading && statusText && (
+                  <div className="mt-6 flex items-center justify-center gap-2 text-sm text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {statusText}
+                  </div>
+                )}
+
+                <div className="mt-5 flex w-full gap-3">
+                  <button
+                    onClick={() => {
+                      stopListening();
+                      setError("");
+                      setStep(0);
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-white/70 px-5 py-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur transition hover:bg-white"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Back
+                  </button>
+                  <button
+                    onClick={goToNextBriefQuestion}
+                    disabled={loading}
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary text-primary-foreground font-medium py-3 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                  >
+                    {currentBriefQuestionIndex === briefQuestions.length - 1
+                      ? "Review answers"
+                      : "Continue"}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </StepShell>
-        </div>
-      </main>
+            </StepShell>
+          </div>
+        </main>
       </>
     );
   }
 
   return (
     <>
-    {nav}
-    <main className="min-h-screen bg-background flex items-center justify-center px-4 pb-10 pt-28">
-      <div className="w-full max-w-[560px]">
-        <div className="bg-card rounded-3xl shadow-[0_20px_60px_-20px_rgba(80,40,160,0.25)] p-8 sm:p-12 border border-border/40">
-          <Stepper step={step} />
+      {nav}
+      <main className="min-h-screen bg-background flex items-center justify-center px-4 pb-10 pt-28">
+        <div className="w-full max-w-[560px]">
+          <div className="bg-card rounded-3xl shadow-[0_20px_60px_-20px_rgba(80,40,160,0.25)] p-8 sm:p-12 border border-border/40">
+            <Stepper step={step} />
 
-          {step === 0 && (
-            <StepShell step={0}>
-              <Mascot />
-              <h1 className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground text-center">
-                Let's set up your Yeti
-              </h1>
-              <p className="mt-3 text-sm text-muted-foreground text-center">
-                Enter your business name and website — Yeti will learn everything about it.
-              </p>
+            {step === 0 && (
+              <StepShell step={0}>
+                <Mascot />
+                <h1 className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground text-center">
+                  Let's set up your Yeti
+                </h1>
+                <p className="mt-3 text-sm text-muted-foreground text-center">
+                  Enter your business name and website — Yeti will learn everything about it.
+                </p>
 
-              <div className="mt-8 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Business Name</label>
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. SnowPeak Gear Co."
-                    className="w-full rounded-xl bg-muted/50 border border-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition focus:border-primary/40 focus:bg-card focus:ring-4 focus:ring-primary/15"
+                <div className="mt-8 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Business Name
+                    </label>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. SnowPeak Gear Co."
+                      className="w-full rounded-xl bg-muted/50 border border-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition focus:border-primary/40 focus:bg-card focus:ring-4 focus:ring-primary/15"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Website URL
+                    </label>
+                    <input
+                      value={site}
+                      onChange={(e) => setSite(e.target.value)}
+                      placeholder="https://yourwebsite.com"
+                      className="w-full rounded-xl bg-muted/50 border border-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition focus:border-primary/40 focus:bg-card focus:ring-4 focus:ring-primary/15"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
+
+                {loading && statusText && (
+                  <div className="mt-4 flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {statusText}
+                  </div>
+                )}
+
+                <button
+                  disabled={!canContinue || loading}
+                  onClick={() => void continueToVoice()}
+                  className="mt-8 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-medium py-3.5 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {loading ? "Checking plan..." : "Continue"}
+                  {!loading && <ArrowRight className="h-4 w-4" />}
+                </button>
+                {isGeneratingQuestions && <QuestionLoadingGame />}
+                {showLuckySpin && (
+                  <LuckySpinPopup
+                    spinning={spinLoading}
+                    reward={spinReward}
+                    message="Your account has 0 credits. Spin once and see what Yeti gives you."
+                    onSpin={() => void spinForCredits()}
+                    onClose={() => {
+                      setShowLuckySpin(false);
+                      setSpinReward(null);
+                    }}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Website URL</label>
-                  <input
-                    value={site}
-                    onChange={(e) => setSite(e.target.value)}
-                    placeholder="https://yourwebsite.com"
-                    className="w-full rounded-xl bg-muted/50 border border-transparent px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition focus:border-primary/40 focus:bg-card focus:ring-4 focus:ring-primary/15"
-                  />
-                </div>
-              </div>
+                )}
+              </StepShell>
+            )}
 
-              {error && (
-                <div className="mt-4 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
-              {loading && statusText && (
-                <div className="mt-4 flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm text-primary">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {statusText}
-                </div>
-              )}
-
-              <button
-                disabled={!canContinue || loading}
-                onClick={() => void continueToVoice()}
-                className="mt-8 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-medium py-3.5 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {loading ? "Checking plan..." : "Continue"}
-                {!loading && <ArrowRight className="h-4 w-4" />}
-              </button>
-              {isGeneratingQuestions && <QuestionLoadingGame />}
-              {showLuckySpin && (
-                <LuckySpinPopup
-                  spinning={spinLoading}
-                  reward={spinReward}
-                  message="Your account has 0 credits. Spin once and see what Yeti gives you."
-                  onSpin={() => void spinForCredits()}
-                  onClose={() => {
-                    setShowLuckySpin(false);
-                    setSpinReward(null);
-                  }}
-                />
-              )}
-            </StepShell>
-          )}
-
-          {/* step 2 is handled above */}
+            {/* step 2 is handled above */}
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
     </>
   );
 }
