@@ -76,11 +76,11 @@
     }
     .yeti-support-subtitle {
       margin-top: 6px;
-      color: #1d1d1f;
+      color: #ffffff;
       font-size: 12px;
       font-weight: 800;
       line-height: 1.25;
-      text-shadow: 0 1px 10px rgba(255,255,255,0.95);
+      text-shadow: 0 2px 14px rgba(0,0,0,0.55);
     }
 
     /* ——— Character image area ——— */
@@ -421,7 +421,8 @@ Keep it one short, friendly, fun sentence.`;
 
     function resizeFrameForState() {
       if (window.parent === window) return;
-      window.parent.postMessage({ type: 'yeti-resize', width: 260, height: 260 }, '*');
+      const height = widget.classList.contains('yeti-state-listening') ? 390 : 360;
+      window.parent.postMessage({ type: 'yeti-resize', width: 300, height }, '*');
     }
 
     resizeFrameForState('idle');
