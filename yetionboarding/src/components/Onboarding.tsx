@@ -42,6 +42,15 @@ const BUSINESS_BRIEF_QUESTIONS = [
 
 const ACTIVE_PLAN_STATUSES = new Set(["active", "trialing", "past_due"]);
 
+const SPIN_REWARDS = [
+  { label: "Tiny Yeti Tip", websites: 1, questions: 75 },
+  { label: "Snowball Boost", websites: 1, questions: 150 },
+  { label: "Lucky Trail", websites: 2, questions: 200 },
+  { label: "Mountain Roll", websites: 2, questions: 300 },
+  { label: "Rare Yeti Jackpot", websites: 3, questions: 500 },
+  { label: "Mythical Yeti Hit", websites: 3, questions: 1000 },
+];
+
 async function fetchSetupCredits(accessToken: string) {
   const response = await fetch("/api/account-subscription", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -206,68 +215,79 @@ function LuckySpinPopup({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
       <style>{`
-        @keyframes yeti-run-track {
-          from { transform: translateX(120%); }
-          to { transform: translateX(-140%); }
-        }
-        @keyframes yeti-jump {
-          0%, 100% { transform: translateY(0); }
-          45% { transform: translateY(-44px); }
-        }
-        @keyframes yeti-ground {
-          from { background-position-x: 0; }
-          to { background-position-x: -48px; }
+        @keyframes yeti-prize-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(1080deg); }
         }
       `}</style>
-      <div className="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)] sm:p-6">
+      <div className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)] sm:p-6">
         <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
           Lucky Yeti Spin
         </p>
         <h2 className="mx-auto mt-2 max-w-md text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
-          We do not fake luck. Everybody gets different stuff.
+          Spin for free Yeti credits.
         </h2>
         <p className="mx-auto mt-2 max-w-md text-xs font-bold leading-5 text-muted-foreground">
-          Spin once. If Yeti blesses you, you get free website slots and AI questions. If not, blame the mountain.
+          One spin. Win extra website slots and AI question credits before you set up.
         </p>
 
-        <div className="relative mx-auto mt-5 h-60 overflow-hidden rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#111827_0%,#20113f_54%,#f8f7ff_54%,#ffffff_100%)] shadow-inner">
-          <div className="absolute left-5 top-5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-            real odds
-          </div>
-          <div className="absolute right-5 top-5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
-            one spin
-          </div>
-          <div className="absolute bottom-[72px] left-0 right-0 h-[3px] bg-foreground/80" />
-          <div
-            className="absolute bottom-[74px] left-12 z-10"
-            style={{ animation: spinning ? "yeti-jump 0.72s ease-in-out infinite" : undefined }}
-          >
-            <img src={yeti} alt="Yeti mascot" className="h-20 w-20 object-contain drop-shadow-xl" />
-          </div>
-          {[0, 1, 2].map((item) => (
-            <span
-              key={item}
-              className="absolute bottom-[75px] h-10 w-7 rounded-md bg-primary shadow-[0_10px_24px_-12px_rgba(124,58,237,0.9)]"
+        <div className="mt-5 grid items-center gap-5 md:grid-cols-[1fr_0.9fr]">
+          <div className="relative mx-auto h-72 w-72 sm:h-80 sm:w-80">
+            <div className="absolute -top-2 left-1/2 z-20 h-0 w-0 -translate-x-1/2 border-x-[11px] border-t-[22px] border-x-transparent border-t-foreground drop-shadow-md" />
+            <div
+              className="absolute inset-0 rounded-full border-[10px] border-white shadow-[0_24px_70px_-38px_rgba(124,58,237,0.75)] ring-1 ring-primary/15"
               style={{
-                right: `${28 + item * 150}px`,
-                animation: spinning
-                  ? `yeti-run-track 1.35s linear ${item * 0.28}s infinite`
-                  : undefined,
+                background:
+                  "conic-gradient(from -90deg,#f9a8d4 0deg 60deg,#fdf2f8 60deg 120deg,#c084fc 120deg 180deg,#fbcfe8 180deg 240deg,#e9d5ff 240deg 300deg,#f472b6 300deg 360deg)",
+                animation: spinning ? "yeti-prize-spin 1.45s cubic-bezier(.18,.72,.16,1) infinite" : undefined,
               }}
-            />
-          ))}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-[72px] opacity-70"
-            style={{
-              backgroundImage:
-                "linear-gradient(90deg,rgba(124,58,237,0.16) 0 24px,transparent 24px 48px)",
-              backgroundSize: "48px 100%",
-              animation: spinning ? "yeti-ground 0.65s linear infinite" : undefined,
-            }}
-          />
-          <p className="absolute bottom-5 left-0 right-0 text-xs font-black uppercase tracking-[0.2em] text-foreground/70">
-            {spinning ? "Yeti is jumping for your credits..." : "Press spin to play"}
-          </p>
+            >
+              {SPIN_REWARDS.map((item, index) => (
+                <div
+                  key={item.label}
+                  className="absolute left-1/2 top-1/2 w-[112px] origin-left text-left text-[10px] font-black leading-3 text-foreground"
+                  style={{ transform: `rotate(${index * 60 + 30}deg) translateX(22px)` }}
+                >
+                  <span
+                    className="block max-w-[96px]"
+                    style={{ transform: `rotate(${index >= 2 && index <= 4 ? 180 : 0}deg)` }}
+                  >
+                    {item.websites} site + {item.questions} Qs
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={reward ? onClose : onSpin}
+              disabled={spinning}
+              className="absolute left-1/2 top-1/2 z-30 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-[5px] border-white bg-foreground text-base font-black text-white shadow-[0_18px_45px_-20px_rgba(15,23,42,0.85)] transition hover:scale-105 disabled:cursor-wait disabled:opacity-80"
+            >
+              {spinning ? "..." : reward ? "Done" : "Spin"}
+            </button>
+            <div className="absolute inset-5 rounded-full border border-white/60" />
+          </div>
+
+          <div className="rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#fff,#faf7ff)] p-4 text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+              What you can win
+            </p>
+            <div className="mt-3 grid gap-2">
+              {SPIN_REWARDS.map((item) => (
+                <div key={item.label} className="flex items-center justify-between rounded-2xl bg-white px-3 py-2 shadow-sm">
+                  <div>
+                    <p className="text-xs font-black text-foreground">{item.label}</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">
+                      {item.websites} website {item.websites === 1 ? "slot" : "slots"}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black text-primary">
+                    +{item.questions.toLocaleString()} Qs
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {reward ? (
@@ -281,7 +301,7 @@ function LuckySpinPopup({
           </div>
         ) : (
           <p className="mt-4 text-sm font-bold text-foreground">
-            {message || "The wheel is real. The odds are rude."}
+            {message || (spinning ? "Yeti is spinning the mountain wheel..." : "Press spin once to get your prize.")}
           </p>
         )}
 
