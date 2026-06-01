@@ -2,39 +2,39 @@ const crypto = require("node:crypto");
 
 const REWARDS = [
   {
-    threshold: 5200,
-    websites_granted: 1,
+    threshold: 7000,
+    websites_granted: 0,
+    questions_granted: 25,
+    reward_label: "Tiny Snowflake",
+  },
+  {
+    threshold: 9000,
+    websites_granted: 0,
     questions_granted: 75,
-    reward_label: "Tiny Yeti Tip",
+    reward_label: "Small Yeti Boost",
   },
   {
-    threshold: 7800,
+    threshold: 9700,
     websites_granted: 1,
-    questions_granted: 150,
-    reward_label: "Snowball Boost",
+    questions_granted: 100,
+    reward_label: "Starter Taste",
   },
   {
-    threshold: 9200,
-    websites_granted: 2,
+    threshold: 9900,
+    websites_granted: 1,
     questions_granted: 200,
     reward_label: "Lucky Trail",
   },
   {
-    threshold: 9800,
+    threshold: 9980,
     websites_granted: 2,
     questions_granted: 300,
-    reward_label: "Mountain Roll",
-  },
-  {
-    threshold: 9950,
-    websites_granted: 3,
-    questions_granted: 500,
-    reward_label: "Rare Yeti Jackpot",
+    reward_label: "Rare Mountain Hit",
   },
   {
     threshold: 10000,
     websites_granted: 3,
-    questions_granted: 1000,
+    questions_granted: 500,
     reward_label: "Mythical Yeti Hit",
   },
 ];

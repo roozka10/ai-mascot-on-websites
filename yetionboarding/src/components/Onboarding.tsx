@@ -43,12 +43,12 @@ const BUSINESS_BRIEF_QUESTIONS = [
 const ACTIVE_PLAN_STATUSES = new Set(["active", "trialing", "past_due"]);
 
 const SPIN_REWARDS = [
-  { label: "Tiny Yeti Tip", websites: 1, questions: 75 },
-  { label: "Snowball Boost", websites: 1, questions: 150 },
-  { label: "Lucky Trail", websites: 2, questions: 200 },
-  { label: "Mountain Roll", websites: 2, questions: 300 },
-  { label: "Rare Yeti Jackpot", websites: 3, questions: 500 },
-  { label: "Mythical Yeti Hit", websites: 3, questions: 1000 },
+  { label: "Tiny Snowflake", websites: 0, questions: 25 },
+  { label: "Small Yeti Boost", websites: 0, questions: 75 },
+  { label: "Starter Taste", websites: 1, questions: 100 },
+  { label: "Lucky Trail", websites: 1, questions: 200 },
+  { label: "Rare Mountain Hit", websites: 2, questions: 300 },
+  { label: "Mythical Yeti Hit", websites: 3, questions: 500 },
 ];
 
 async function fetchSetupCredits(accessToken: string) {
@@ -228,7 +228,7 @@ function LuckySpinPopup({
           Spin for free Yeti credits.
         </h2>
         <p className="mx-auto mt-2 max-w-md text-xs font-bold leading-5 text-muted-foreground">
-          One spin. Win extra website slots and AI answers before you set up.
+          One small bonus spin. Plans are still the way to run Yeti for real.
         </p>
 
         <div className="mt-5 grid items-center gap-5 md:grid-cols-[0.95fr_1fr]">
@@ -252,7 +252,7 @@ function LuckySpinPopup({
                     className="block max-w-[86px]"
                     style={{ transform: `rotate(${index >= 2 && index <= 4 ? 180 : 0}deg)` }}
                   >
-                    {item.websites} site + {item.questions} answers
+                    {item.websites} {item.websites === 1 ? "site" : "sites"} + {item.questions} answers
                   </span>
                 </div>
               ))}
