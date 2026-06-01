@@ -3,6 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 
 type PricingSectionProps = {
   standalone?: boolean;
+  onLogin?: () => void;
 };
 
 const plans = [
@@ -52,7 +53,7 @@ const plans = [
   },
 ];
 
-export function PricingSection({ standalone = false }: PricingSectionProps) {
+export function PricingSection({ standalone = false, onLogin }: PricingSectionProps) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
 
@@ -136,11 +137,21 @@ export function PricingSection({ standalone = false }: PricingSectionProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => startCheckout(plan.id)}
-                  disabled={loadingPlan !== null}
+                  onClick={() => {
+                    if (!standalone && onLogin) {
+                      onLogin();
+                      return;
+                    }
+                    startCheckout(plan.id);
+                  }}
+                  disabled={standalone && loadingPlan !== null}
                   className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
                 >
-                  {loadingPlan === plan.id ? "Opening Stripe..." : "Start 3-day free trial"}
+                  {!standalone && onLogin
+                    ? "Log in to choose this plan"
+                    : loadingPlan === plan.id
+                      ? "Opening Stripe..."
+                      : "Start 3-day free trial"}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
                 <p className="mt-2.5 text-center text-[11px] font-semibold text-muted-foreground">

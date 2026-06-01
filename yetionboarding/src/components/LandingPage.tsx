@@ -265,7 +265,7 @@ export function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
-      <PricingSection />
+      <PricingSection onLogin={onStart} />
 
       <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
