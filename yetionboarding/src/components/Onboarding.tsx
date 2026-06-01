@@ -228,17 +228,17 @@ function LuckySpinPopup({
           Spin for free Yeti credits.
         </h2>
         <p className="mx-auto mt-2 max-w-md text-xs font-bold leading-5 text-muted-foreground">
-          One spin. Win extra website slots and AI question credits before you set up.
+          One spin. Win extra website slots and AI answers before you set up.
         </p>
 
-        <div className="mt-5 grid items-center gap-5 md:grid-cols-[1fr_0.9fr]">
-          <div className="relative mx-auto h-72 w-72 sm:h-80 sm:w-80">
+        <div className="mt-5 grid items-center gap-5 md:grid-cols-[0.95fr_1fr]">
+          <div className="relative mx-auto h-72 w-72">
             <div className="absolute -top-2 left-1/2 z-20 h-0 w-0 -translate-x-1/2 border-x-[11px] border-t-[22px] border-x-transparent border-t-foreground drop-shadow-md" />
             <div
               className="absolute inset-0 rounded-full border-[10px] border-white shadow-[0_24px_70px_-38px_rgba(124,58,237,0.75)] ring-1 ring-primary/15"
               style={{
                 background:
-                  "conic-gradient(from -90deg,#f9a8d4 0deg 60deg,#fdf2f8 60deg 120deg,#c084fc 120deg 180deg,#fbcfe8 180deg 240deg,#e9d5ff 240deg 300deg,#f472b6 300deg 360deg)",
+                  "conic-gradient(from -90deg,#f9a8d4 0deg 60deg,#fdf2f8 60deg 120deg,#c4b5fd 120deg 180deg,#fbcfe8 180deg 240deg,#ede9fe 240deg 300deg,#f472b6 300deg 360deg)",
                 animation: spinning ? "yeti-prize-spin 1.45s cubic-bezier(.18,.72,.16,1) infinite" : undefined,
               }}
             >
@@ -249,10 +249,10 @@ function LuckySpinPopup({
                   style={{ transform: `rotate(${index * 60 + 30}deg) translateX(22px)` }}
                 >
                   <span
-                    className="block max-w-[96px]"
+                    className="block max-w-[86px]"
                     style={{ transform: `rotate(${index >= 2 && index <= 4 ? 180 : 0}deg)` }}
                   >
-                    {item.websites} site + {item.questions} Qs
+                    {item.websites} site + {item.questions} answers
                   </span>
                 </div>
               ))}
@@ -268,21 +268,21 @@ function LuckySpinPopup({
             <div className="absolute inset-5 rounded-full border border-white/60" />
           </div>
 
-          <div className="rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#fff,#faf7ff)] p-4 text-left">
+          <div className="rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#fff,#faf7ff)] p-4 text-left shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
               What you can win
             </p>
             <div className="mt-3 grid gap-2">
               {SPIN_REWARDS.map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-2xl bg-white px-3 py-2 shadow-sm">
+                <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
                   <div>
                     <p className="text-xs font-black text-foreground">{item.label}</p>
                     <p className="text-[11px] font-bold text-muted-foreground">
                       {item.websites} website {item.websites === 1 ? "slot" : "slots"}
                     </p>
                   </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black text-primary">
-                    +{item.questions.toLocaleString()} Qs
+                  <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black text-primary">
+                    +{item.questions.toLocaleString()} answers
                   </span>
                 </div>
               ))}
@@ -296,7 +296,7 @@ function LuckySpinPopup({
               {reward.reward_label || "Yeti Prize"}
             </p>
             <p className="mt-1 text-lg font-black text-foreground">
-              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"} and +{reward.questions_granted.toLocaleString()} AI questions
+              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"} and +{reward.questions_granted.toLocaleString()} AI answers
             </p>
           </div>
         ) : (
@@ -306,14 +306,15 @@ function LuckySpinPopup({
         )}
 
         <div className="mt-4 grid gap-2">
-          <button
-            type="button"
-            onClick={reward ? onClose : onSpin}
-            disabled={spinning}
-            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
-          >
-            {spinning ? "Spinning..." : reward ? "Use my credits" : "Spin once"}
-          </button>
+          {reward && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
+            >
+              Use my credits
+            </button>
+          )}
           {!reward && (
             <button
               type="button"
@@ -842,7 +843,7 @@ function AccountPage({
               </p>
             </div>
             <div className="rounded-2xl bg-white px-4 py-3 shadow-sm sm:col-span-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">AI question credits this month</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">AI answers this month</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
                 {questionCredits}
               </p>
