@@ -30,6 +30,7 @@ export function FeatureRequestButton() {
   const [contactEmail, setContactEmail] = useState("");
   const [accountEmail, setAccountEmail] = useState("");
   const [accessToken, setAccessToken] = useState("");
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [listening, setListening] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -40,21 +41,31 @@ export function FeatureRequestButton() {
     typeof window !== "undefined" && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 
   useEffect(() => {
-    if (!open || !isSupabaseConfigured) return;
+    if (!isSupabaseConfigured) return;
 
     let active = true;
-    supabase.auth.getSession().then(({ data }) => {
+    const applySession = (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
       if (!active) return;
-      const session = data.session;
+      setIsSignedIn(Boolean(session));
       setAccessToken(session?.access_token || "");
       setAccountEmail(session?.user?.email || "");
       setContactEmail((current) => current || session?.user?.email || "");
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      applySession(data.session);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
     });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
-  }, [open]);
+  }, []);
 
   const stopListening = () => {
     recognitionRef.current?.stop();
@@ -132,6 +143,8 @@ export function FeatureRequestButton() {
       setSubmitting(false);
     }
   };
+
+  if (!isSignedIn) return null;
 
   return (
     <>
