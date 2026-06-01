@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Analytics } from "@vercel/analytics/react";
 
 import Onboarding from "@/components/Onboarding";
 import { PricingSection } from "@/components/PricingSection";
@@ -60,6 +61,7 @@ export default function App() {
         {path.startsWith("/pricing") ? <PricingPage /> : <Onboarding />}
         <FeatureRequestButton />
       </div>
+      <Analytics />
     </QueryClientProvider>
   );
 }
