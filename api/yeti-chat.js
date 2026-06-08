@@ -2,6 +2,9 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const HUGGINGFACE_URL = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
 const GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const MAX_PROMPT_CHARS = 12000;
+const ANSWER_STYLE_GUARDRAIL =
+  "Answer like a friendly human guide: warm, clear, and easy to understand. Use plain words. Usually give 1 short sentence. Use 2 short sentences only when needed for accuracy. Stick to the website knowledge. Never invent prices, policies, hours, refunds, or contact details. Say clean domains only, like example.com; never say https, www, slashes, or long paths.";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -309,12 +312,11 @@ async function callProvider(url, headers, model, systemPrompt, messages) {
   const guidedMessages = [
     {
       role: "system",
-      content: String(systemPrompt || "").slice(0, 2200),
+      content: String(systemPrompt || "").slice(0, MAX_PROMPT_CHARS),
     },
     {
       role: "system",
-      content:
-        "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths.",
+      content: ANSWER_STYLE_GUARDRAIL,
     },
     ...compactedMessages,
   ];
@@ -325,8 +327,8 @@ async function callProvider(url, headers, model, systemPrompt, messages) {
     body: JSON.stringify({
       model,
       messages: guidedMessages,
-      max_tokens: 45,
-      temperature: 0.65,
+      max_tokens: 90,
+      temperature: 0.55,
     }),
   });
 
@@ -355,16 +357,16 @@ async function callGemini(systemPrompt, messages) {
           parts: [
             {
               text: [
-                String(systemPrompt || "").slice(0, 2200),
-                "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths.",
+                String(systemPrompt || "").slice(0, MAX_PROMPT_CHARS),
+                ANSWER_STYLE_GUARDRAIL,
               ].join("\n\n"),
             },
           ],
         },
         contents,
         generationConfig: {
-          maxOutputTokens: 45,
-          temperature: 0.65,
+          maxOutputTokens: 90,
+          temperature: 0.55,
         },
       }),
     },

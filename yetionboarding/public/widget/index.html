@@ -532,6 +532,7 @@ Keep it one short, friendly, fun sentence.`;
     // ——— Chrome Web Speech Recognition ———
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let lastTranscript = '';
+    let manuallyStopping = false;
 
     if (SpeechRecognition) {
       recognition = new SpeechRecognition();
@@ -553,8 +554,11 @@ Keep it one short, friendly, fun sentence.`;
       };
 
       recognition.onend = () => {
-        // If user hasn't stopped manually and no text yet, keep listening
-        if (isListening && !lastTranscript.trim()) {
+        const wasManuallyStopped = manuallyStopping;
+        manuallyStopping = false;
+
+        // If the browser ends listening by itself with no text, keep listening.
+        if (isListening && !wasManuallyStopped && !lastTranscript.trim()) {
           try { recognition.start(); } catch(e) {}
           return;
         }
@@ -606,6 +610,7 @@ Keep it one short, friendly, fun sentence.`;
 
     function stopListening() {
       if (!recognition || !isListening) return;
+      manuallyStopping = true;
       recognition.stop();
     }
 

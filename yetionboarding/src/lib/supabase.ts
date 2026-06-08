@@ -56,3 +56,38 @@ export async function fetchYetiConfig(yetiId: string): Promise<YetiConfig | null
   if (error || !data) return null;
   return data as YetiConfig;
 }
+
+export async function fetchMyYetis(): Promise<YetiConfig[]> {
+  if (!isSupabaseConfigured) return [];
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return [];
+
+  const { data, error } = await supabase
+    .from("yeti_configs")
+    .select("*")
+    .eq("user_email", user.email)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data || []) as YetiConfig[];
+}
+
+export async function updateYetiKnowledge(
+  yetiId: string,
+  prompt: string,
+  pages: string[],
+): Promise<void> {
+  if (!isSupabaseConfigured) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { error } = await supabase
+    .from("yeti_configs")
+    .update({ prompt, pages })
+    .eq("yeti_id", yetiId);
+
+  if (error) throw new Error(error.message);
+}

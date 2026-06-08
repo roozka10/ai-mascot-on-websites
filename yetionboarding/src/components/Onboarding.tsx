@@ -12,6 +12,7 @@ import {
   Globe,
   Loader2,
   Mic,
+  RefreshCw,
   Square,
   User,
   LogOut,
@@ -21,11 +22,14 @@ import { LandingPage } from "@/components/LandingPage";
 import yeti from "@/assets/yeti.png";
 import mascotHandsUp from "../../../mascotwithhandsup.png";
 import {
+  fetchMyYetis,
   generateYetiId,
   getAuthRedirectUrl,
   isSupabaseConfigured,
   saveYetiConfig,
   supabase,
+  updateYetiKnowledge,
+  type YetiConfig,
 } from "@/lib/supabase";
 
 const TOTAL = 4;
@@ -331,216 +335,49 @@ function LuckySpinPopup({
   );
 }
 
-// ——— CORS proxy with fallbacks ———
-async function fetchViaProxy(url: string): Promise<string | null> {
-  const proxies = [
-    (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-    (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-    (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  ];
-  for (const makeUrl of proxies) {
-    try {
-      const res = await fetch(makeUrl(url), { signal: AbortSignal.timeout(10000) });
-      if (res.ok) return await res.text();
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
-
-type PageScan = {
-  url: string;
-  path: string;
-  title: string;
-  description: string;
-  headings: string[];
-  ctas: string[];
-  snippets: string[];
-  internalUrls: string[];
+type WebsiteScanResult = {
+  brain: string;
+  pages: string[];
+  pagesScanned: number;
 };
 
-const MAX_SCAN_PAGES = 8;
-
-function cleanText(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
+function extractOwnerNotes(prompt: string): string {
+  const match = prompt.match(/Owner notes:\s*([\s\S]*?)(?:\n\nAnswer rules:|$)/i);
+  return match?.[1]?.trim() || "";
 }
 
-function normalizePageUrl(href: string, baseUrl: string): string | null {
-  if (!href || /^(mailto:|tel:|sms:|javascript:)/i.test(href)) return null;
-
-  try {
-    const url = new URL(href, baseUrl);
-    const base = new URL(baseUrl);
-    if (url.origin !== base.origin) return null;
-
-    url.hash = "";
-    url.search = "";
-
-    if (
-      /\.(pdf|png|jpe?g|gif|webp|svg|mp4|mov|zip|css|js|ico|xml)$/i.test(url.pathname) ||
-      /\/(login|logout|cart|checkout|account|wp-admin)\b/i.test(url.pathname)
-    ) {
-      return null;
-    }
-
-    return url.toString().replace(/\/$/, "");
-  } catch {
-    return null;
-  }
+function toWebsiteUrl(domainOrUrl: string): string {
+  const raw = domainOrUrl.trim();
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
 
-function compactList(items: string[], maxItems: number, maxLength = 90): string[] {
-  return [...new Set(items.map(cleanText).filter(Boolean))]
-    .filter((item) => item.length > 1)
-    .map((item) => (item.length > maxLength ? `${item.slice(0, maxLength - 1)}...` : item))
-    .slice(0, maxItems);
-}
-
-// ——— Deep HTML extraction ———
-function extractPageScan(html: string, pageUrl: string, bizName: string): PageScan {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-  doc.querySelectorAll("script, style, noscript, svg").forEach((el) => el.remove());
-
-  const parsedUrl = new URL(pageUrl);
-
-  const title = cleanText(doc.querySelector("title")?.textContent || bizName);
-  const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute("content") || "";
-  const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute("content") || "";
-
-  const internalUrls = new Set<string>();
-  doc.querySelectorAll("a[href]").forEach((a) => {
-    const href = (a as HTMLAnchorElement).getAttribute("href");
-    const normalized = href ? normalizePageUrl(href, pageUrl) : null;
-    if (normalized) internalUrls.add(normalized);
-  });
-
-  const headings: string[] = [];
-  doc.querySelectorAll("h1, h2, h3").forEach((h) => headings.push(h.textContent || ""));
-
-  const ctas = new Set<string>();
-  doc.querySelectorAll('button, a.btn, a.button, [class*="cta"], [class*="btn"]').forEach((el) => {
-    const t = cleanText(el.textContent || "");
-    if (t && t.length > 2 && t.length < 40) ctas.add(t);
-  });
-
-  const snippets: string[] = [];
-  doc.querySelectorAll("main p, main li, section p, section li, article p, article li").forEach((el) => {
-    const text = cleanText(el.textContent || "");
-    if (text.length >= 45 && text.length <= 260) snippets.push(text);
-  });
-
-  const structuredSnippets: string[] = [];
-  doc.querySelectorAll('script[type="application/ld+json"]').forEach((s) => {
-    try {
-      const d = JSON.parse(s.textContent || "");
-      const items = Array.isArray(d) ? d : [d];
-      items.forEach((item) => {
-        if (item.name) structuredSnippets.push(`Name: ${item.name}`);
-        if (item.description) structuredSnippets.push(`Description: ${item.description}`);
-        if (item.telephone) structuredSnippets.push(`Phone: ${item.telephone}`);
-        if (item.address?.streetAddress) structuredSnippets.push(`Address: ${item.address.streetAddress}`);
-      });
-    } catch {
-      /* skip */
-    }
-  });
-
-  return {
-    url: pageUrl,
-    path: parsedUrl.pathname === "/" ? "Home" : parsedUrl.pathname.replace(/^\/|\/$/g, ""),
-    title,
-    description: cleanText(metaDesc || ogDesc),
-    headings: compactList(headings, 8),
-    ctas: compactList([...ctas], 6, 45),
-    snippets: compactList([...structuredSnippets, ...snippets], 8, 180),
-    internalUrls: [...internalUrls],
-  };
-}
-
-function extractSitemapUrls(xml: string, baseUrl: string): string[] {
-  const urls = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/gi)]
-    .map((match) => normalizePageUrl(match[1], baseUrl))
-    .filter((url): url is string => Boolean(url));
-  return [...new Set(urls)];
-}
-
-async function scanWebsite(
+async function scanWebsiteViaApi(
   startUrl: string,
-  bizName: string,
+  businessName: string,
+  ownerNotes: string,
   onStatus: (message: string) => void,
-): Promise<PageScan[]> {
-  onStatus("Scanning homepage...");
-  const homeHtml = await fetchViaProxy(startUrl);
-  if (!homeHtml) return [];
-
-  const homeScan = extractPageScan(homeHtml, startUrl, bizName);
-  const baseUrl = new URL(startUrl).origin;
-
-  onStatus("Finding important pages...");
-  const sitemapHtml = await fetchViaProxy(`${baseUrl}/sitemap.xml`);
-  const sitemapUrls = sitemapHtml ? extractSitemapUrls(sitemapHtml, startUrl) : [];
-
-  const candidates = [...new Set([startUrl, ...sitemapUrls, ...homeScan.internalUrls])]
-    .filter((url) => normalizePageUrl(url, startUrl))
-    .slice(0, MAX_SCAN_PAGES);
-
-  const scans: PageScan[] = [homeScan];
-  for (const pageUrl of candidates.filter((candidate) => candidate !== startUrl)) {
-    onStatus(`Scanning ${new URL(pageUrl).pathname || "/"}...`);
-    const html = await fetchViaProxy(pageUrl);
-    if (!html) continue;
-    scans.push(extractPageScan(html, pageUrl, bizName));
-    if (scans.length >= MAX_SCAN_PAGES) break;
+): Promise<WebsiteScanResult> {
+  onStatus("Scanning your website pages...");
+  const response = await fetch("/api/website-scan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: startUrl,
+      businessName,
+      ownerNotes,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || "Yeti could not scan this website.");
   }
 
-  return scans;
-}
-
-function buildVoicePrompt({
-  name,
-  url,
-  transcript,
-  scans,
-}: {
-  name: string;
-  url: string;
-  transcript: string;
-  scans: PageScan[];
-}) {
-  const pageKnowledge = scans
-    .slice(0, 6)
-    .map((page) => {
-      const facts = [
-        page.description,
-        ...page.headings.slice(0, 3),
-        ...page.snippets.slice(0, 3),
-        page.ctas.length ? `Actions: ${page.ctas.join(", ")}` : "",
-      ].filter(Boolean);
-      return `- ${page.path}: ${facts.join(" | ").slice(0, 360)}`;
-    })
-    .join("\n");
-
-  const ownerNotes = transcript.trim()
-    ? `\nOwner notes: ${transcript.trim().slice(0, 1200)}`
-    : "";
-
-  return `You are Yeti, the fast website guide for ${name}. Use ONLY this compact site knowledge.
-
-Site: ${new URL(url).hostname.replace(/^www\./, "")}
-${ownerNotes}
-
-Knowledge:
-${pageKnowledge || "- Website scan found limited text. Ask a concise clarifying question if needed."}
-
-Rules:
-- Answer fast, like a human guide: fun, warm, and easy.
-- Keep answers tiny: 1 short sentence, max 2 only if needed.
-- Prefer scanned site knowledge over owner notes.
-- Never invent prices, policies, guarantees, hours, or availability.
-- Mention clean domains only, like example.com. No https, www, slashes, or long paths.
-- Just speak naturally.`;
+  onStatus(`Learned ${data.pagesScanned || 0} pages...`);
+  return {
+    brain: String(data.brain || ""),
+    pages: Array.isArray(data.pages) ? data.pages : [],
+    pagesScanned: Number(data.pagesScanned || 0),
+  };
 }
 
 function GoogleIcon() {
@@ -699,10 +536,15 @@ function AccountPage({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+  const [myYetis, setMyYetis] = useState<YetiConfig[]>([]);
+  const [yetisLoading, setYetisLoading] = useState(true);
+  const [refreshingYetiId, setRefreshingYetiId] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState("");
 
   useEffect(() => {
     if (!accessToken) {
       setSubscriptionLoading(false);
+      setYetisLoading(false);
       return;
     }
 
@@ -732,6 +574,61 @@ function AccountPage({
       active = false;
     };
   }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    let active = true;
+    setYetisLoading(true);
+
+    void fetchMyYetis()
+      .then((yetis) => {
+        if (active) setMyYetis(yetis);
+      })
+      .catch(() => {
+        if (active) setMyYetis([]);
+      })
+      .finally(() => {
+        if (active) setYetisLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  async function refreshYetiKnowledge(yeti: YetiConfig) {
+    setRefreshingYetiId(yeti.yeti_id);
+    setRefreshMessage("");
+
+    try {
+      const ownerNotes = extractOwnerNotes(yeti.prompt);
+      const scanResult = await scanWebsiteViaApi(
+        toWebsiteUrl(yeti.domain),
+        yeti.business_name,
+        ownerNotes,
+        () => {},
+      );
+
+      await updateYetiKnowledge(yeti.yeti_id, scanResult.brain, scanResult.pages.slice(0, 50));
+      setMyYetis((current) =>
+        current.map((item) =>
+          item.yeti_id === yeti.yeti_id
+            ? { ...item, prompt: scanResult.brain, pages: scanResult.pages.slice(0, 50) }
+            : item,
+        ),
+      );
+      setRefreshMessage(
+        `Updated ${yeti.business_name} from ${scanResult.pagesScanned} pages.`,
+      );
+    } catch (error) {
+      setRefreshMessage(
+        error instanceof Error ? error.message : "Could not refresh this Yeti.",
+      );
+    } finally {
+      setRefreshingYetiId(null);
+    }
+  }
 
   async function cancelSubscription() {
     if (!accessToken || !subscription?.stripe_subscription_id) return;
@@ -866,6 +763,71 @@ function AccountPage({
             >
               {isCanceled ? "Plan canceled" : "Cancel plan"}
             </button>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-white p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Your Yetis
+              </p>
+              <h2 className="mt-1.5 text-lg font-black tracking-[-0.04em] text-foreground">
+                Refresh website knowledge
+              </h2>
+              <p className="mt-1 text-xs font-bold text-muted-foreground">
+                Rescan your site pages so answers stay accurate.
+              </p>
+            </div>
+          </div>
+
+          {refreshMessage && (
+            <p className="mt-3 rounded-2xl border border-primary/20 bg-primary/8 px-3 py-2 text-xs font-bold text-primary">
+              {refreshMessage}
+            </p>
+          )}
+
+          <div className="mt-4 space-y-2">
+            {yetisLoading ? (
+              <p className="text-sm font-bold text-muted-foreground">Loading your Yetis...</p>
+            ) : myYetis.length === 0 ? (
+              <p className="text-sm font-bold text-muted-foreground">
+                No Yetis yet. Finish setup to create one.
+              </p>
+            ) : (
+              myYetis.map((yeti) => (
+                <div
+                  key={yeti.yeti_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-foreground">{yeti.business_name}</p>
+                    <p className="truncate text-xs font-bold text-muted-foreground">{yeti.domain}</p>
+                    <p className="mt-1 text-[11px] font-bold text-muted-foreground">
+                      {yeti.pages?.length || 0} pages learned
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void refreshYetiKnowledge(yeti)}
+                    disabled={refreshingYetiId === yeti.yeti_id}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-xs font-black text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {refreshingYetiId === yeti.yeti_id ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Refresh knowledge
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -1227,15 +1189,6 @@ export default function Onboarding() {
         }
       }
 
-      const scans = await scanWebsite(url, name, setStatusText);
-      if (!scans.length && !transcript.trim()) {
-        setError("Yeti could not scan this website. Add a short voice note or try the full https:// URL.");
-        return;
-      }
-
-      const allPages = scans.map((scan) => scan.path).filter(Boolean).slice(0, 20);
-
-      setStatusText("Saving your Yeti...");
       const answerNotes = briefQuestions
         .map((question, index) => {
           const answer = (briefAnswers[index] || "").trim();
@@ -1243,12 +1196,21 @@ export default function Onboarding() {
         })
         .filter(Boolean)
         .join("\n\n");
-      const voicePrompt = buildVoicePrompt({
-        name,
+      const scanResult = await scanWebsiteViaApi(
         url,
-        transcript: answerNotes || transcript,
-        scans,
-      });
+        name,
+        answerNotes || transcript,
+        setStatusText,
+      );
+      if (!scanResult.pagesScanned && !transcript.trim() && !answerNotes.trim()) {
+        setError("Yeti could not scan this website. Add a short voice note or try the full https:// URL.");
+        return;
+      }
+
+      const allPages = scanResult.pages.filter(Boolean).slice(0, 50);
+      const voicePrompt = scanResult.brain;
+
+      setStatusText("Saving your Yeti...");
 
       const id = generateYetiId();
       const cleanDomain = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
