@@ -1,6 +1,8 @@
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const HUGGINGFACE_URL =
   "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
+const GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -337,6 +339,49 @@ async function callProvider(url, headers, model, systemPrompt, messages) {
   return cleanReply(data.choices?.[0]?.message?.content);
 }
 
+async function callGemini(systemPrompt, messages) {
+  const compactedMessages = compactMessages(messages);
+  const contents = compactedMessages.map((message) => ({
+    role: message.role === "assistant" ? "model" : "user",
+    parts: [{ text: message.content }],
+  }));
+  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const response = await fetch(
+    `${GEMINI_URL_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [
+            {
+              text: [
+                String(systemPrompt || "").slice(0, 2200),
+                "Speed/style guardrail: reply in one short, easy sentence whenever possible. Be human, warm, fun, and useful. No long explanations. Say clean domains only, like example.com; never say https, www, slashes, or long paths.",
+              ].join("\n\n"),
+            },
+          ],
+        },
+        contents,
+        generationConfig: {
+          maxOutputTokens: 45,
+          temperature: 0.65,
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini failed with ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join(" ");
+  return cleanReply(text);
+}
+
 export default async function handler(req, res) {
   setCors(res);
 
@@ -378,6 +423,19 @@ export default async function handler(req, res) {
     if (!systemPrompt) {
       res.status(404).json({ error: "Yeti not found" });
       return;
+    }
+
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const reply = await callGemini(systemPrompt, messages);
+        if (reply) {
+          await saveCachedAnswer(yetiId, question, reply);
+          res.status(200).json({ reply });
+          return;
+        }
+      } catch {
+        // Fall through to the existing providers.
+      }
     }
 
     if (process.env.OPENROUTER_API_KEY) {

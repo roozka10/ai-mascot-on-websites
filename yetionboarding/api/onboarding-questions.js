@@ -3,6 +3,10 @@ import net from "node:net";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const HUGGINGFACE_URL = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-3B-Instruct/v1/chat/completions";
+const GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const QUESTION_SYSTEM_PROMPT =
+  "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. First read the website notes and do NOT ask for facts already visible on the landing page. Ask for missing details the AI still needs, such as unanswered customer questions, ideal customer, limits, edge cases, support handoff, policies not shown, and tone. Every question must mention the actual business name, website domain, product, or a specific phrase found in the website notes. Never ask generic questions like 'what do your customers ask?' or 'what do you sell?'. If pricing, contact, booking, hours, or policies are already shown in the notes, do not ask for them. Do not include markdown.";
 
 const FALLBACK_QUESTIONS = [
   "What are 3 real questions visitors ask that your landing page does not already answer?",
@@ -259,8 +263,7 @@ async function callProvider(url, headers, model, websiteSummary) {
   const messages = [
     {
       role: "system",
-      content:
-        "You create onboarding questions for a website AI support guide. Return ONLY a JSON array of exactly 5 short questions. First read the website notes and do NOT ask for facts already visible on the landing page. Ask for missing details the AI still needs, such as unanswered customer questions, ideal customer, limits, edge cases, support handoff, policies not shown, and tone. Every question must mention the actual business name, website domain, product, or a specific phrase found in the website notes. Never ask generic questions like 'what do your customers ask?' or 'what do you sell?'. If pricing, contact, booking, hours, or policies are already shown in the notes, do not ask for them. Do not include markdown.",
+      content: QUESTION_SYSTEM_PROMPT,
     },
     {
       role: "user",
@@ -284,7 +287,42 @@ async function callProvider(url, headers, model, websiteSummary) {
   return parseQuestions(data.choices?.[0]?.message?.content);
 }
 
+async function callGeminiQuestions(websiteSummary) {
+  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const response = await fetch(
+    `${GEMINI_URL_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: QUESTION_SYSTEM_PROMPT }] },
+        contents: [{ role: "user", parts: [{ text: `Website notes:\n${websiteSummary}` }] }],
+        generationConfig: {
+          maxOutputTokens: 360,
+          temperature: 0.35,
+        },
+      }),
+    },
+  );
+
+  if (!response.ok) throw new Error("Gemini question model failed");
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join(" ");
+  return parseQuestions(text);
+}
+
 async function generateQuestions(websiteSummary, origin) {
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      const questions = await callGeminiQuestions(websiteSummary);
+      if (questions.length === 5) return questions;
+    } catch {
+      /* fall back to other providers */
+    }
+  }
+
   if (process.env.OPENROUTER_API_KEY) {
     const questions = await callProvider(
       OPENROUTER_URL,
