@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -95,6 +95,60 @@ function HeroYetiDemo() {
   );
 }
 
+function HeroBackgroundVideo() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || failed) return;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch {
+        setFailed(true);
+      }
+    };
+
+    void playVideo();
+  }, [failed]);
+
+  return (
+    <>
+      <img
+        src={HERO_POSTER_URL}
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        fetchPriority="high"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.5),transparent_34%),linear-gradient(135deg,rgba(219,234,254,0.72),rgba(237,233,254,0.64))]" />
+      {!failed && (
+        <video
+          ref={videoRef}
+          className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            ready ? "opacity-100" : "opacity-0"
+          }`}
+          poster={HERO_POSTER_URL}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          disableRemotePlayback
+          onCanPlay={() => setReady(true)}
+          onError={() => setFailed(true)}
+        >
+          <source src={HERO_VIDEO_URL} type="video/mp4" />
+        </video>
+      )}
+    </>
+  );
+}
+
 export function LandingPage({ onStart }: LandingPageProps) {
   const steps = [
     { icon: <ScanSearch className="h-5 w-5" />, title: "Scan your site", text: "Paste your website and Yeti learns the important pages." },
@@ -130,19 +184,7 @@ export function LandingPage({ onStart }: LandingPageProps) {
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.85),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(123,111,230,0.22),transparent_30%),linear-gradient(180deg,#FAFBFF,#F7F8FF)] text-foreground">
       <section className="min-h-screen w-full bg-[#ededed] p-3 font-sans sm:p-4">
         <div className="relative h-[calc(100vh-24px)] w-full overflow-hidden rounded-2xl bg-[#d9d9d9] sm:h-[calc(100vh-32px)] sm:rounded-3xl">
-          <video
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-            src={HERO_VIDEO_URL}
-            poster={HERO_POSTER_URL}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            disableRemotePlayback
-            webkit-playsinline="true"
-            x5-playsinline="true"
-          />
+          <HeroBackgroundVideo />
           <div className="absolute inset-0 bg-white/10" />
           <div className="relative z-10">
             <HeroNav onStart={onStart} />
