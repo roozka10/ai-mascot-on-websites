@@ -4,12 +4,19 @@ import {
   Check,
   ChevronRight,
   Code2,
+  Lock,
   Menu,
+  MessageCircle,
   ScanSearch,
+  ShieldCheck,
+  Sparkles,
+  Star,
   Volume2,
+  Zap,
   X,
 } from "lucide-react";
 import { PricingSection } from "@/components/PricingSection";
+import { AdBanner } from "@/components/AdBanner";
 import yeti from "@/assets/yeti.png";
 
 const HERO_VIDEO_URL =
@@ -26,7 +33,7 @@ function HeroNav({ onStart }: LandingPageProps) {
   const navItems = [
     { label: "How", href: "#how-it-works" },
     { label: "Compare", href: "#compare" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Free", href: "#free" },
     { label: "Takes", href: "#takes" },
     { label: "Mission", href: "#mission" },
   ];
@@ -156,6 +163,30 @@ export function LandingPage({ onStart }: LandingPageProps) {
     { icon: <Code2 className="h-5 w-5" />, title: "Paste one script", text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it." },
   ];
 
+  const trustHighlights = [
+    { icon: <ScanSearch className="h-4 w-4" />, text: "Learns pricing, FAQs, policies, and support pages" },
+    { icon: <Lock className="h-4 w-4" />, text: "AI keys stay server-side, not in the widget" },
+    { icon: <MessageCircle className="h-4 w-4" />, text: "Answers before asking visitors for forms or tickets" },
+  ];
+
+  const proofCards = [
+    {
+      icon: <ShieldCheck className="h-5 w-5" />,
+      title: "Built for trust",
+      text: "Yeti uses only your scanned website knowledge and owner notes. If it does not know, it should say so instead of guessing.",
+    },
+    {
+      icon: <Zap className="h-5 w-5" />,
+      title: "Fast for visitors",
+      text: "The heavy website scan happens during setup. Live visitor questions use saved knowledge and cached answers.",
+    },
+    {
+      icon: <Sparkles className="h-5 w-5" />,
+      title: "Feels human",
+      text: "Short spoken answers, simple words, and a mascot make support feel friendly instead of like another chatbot wall.",
+    },
+  ];
+
   const takes = [
     {
       title: "AI is not the problem.",
@@ -190,40 +221,61 @@ export function LandingPage({ onStart }: LandingPageProps) {
             <HeroNav onStart={onStart} />
             <div className="grid min-h-[calc(100vh-96px)] items-center gap-4 px-4 pb-8 pt-8 text-center md:px-10 lg:grid-cols-[1fr_0.9fr] lg:px-16 lg:text-left">
               <div className="mx-auto max-w-4xl lg:mx-0">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-[13px] shadow-sm">
-                  <span className="h-2 w-2 rounded-full bg-[#7B6FE6]" />
-                  Yeti Guide
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/90 px-4 py-1.5 text-[13px] font-black text-[#0b0f1a] shadow-sm">
+                  <Star className="h-3.5 w-3.5 fill-[#7B6FE6] text-[#7B6FE6]" />
+                  Built for small business websites
                 </div>
                 <h1
                   className="mt-5 font-medium text-[#0b0f1a] sm:mt-6"
                   style={{ fontSize: "clamp(36px, 8vw, 72px)", lineHeight: 1.05, letterSpacing: "-0.02em" }}
                 >
-                  Voice guides for{" "}
+                  Turn visitors into{" "}
                 <span
                   className="text-[#7B6FE6]"
                   style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400 }}
                 >
-                    websites
+                    customers
                   </span>
                   <br />
-                  that hate chatbots
+                  with a talking Yeti
                 </h1>
                 <p
-                  className="mx-auto mt-4 max-w-xl px-2 text-neutral-700 sm:mt-6 lg:mx-0 lg:px-0"
+                  className="mx-auto mt-4 max-w-2xl px-2 text-neutral-700 sm:mt-6 lg:mx-0 lg:px-0"
                   style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}
                 >
-                  Yeti scans your site, learns your brand, and gives visitors short spoken answers.
+                  Yeti scans your website, learns your pricing, FAQs, policies, and pages, then gives visitors short spoken answers they can understand.
                 </p>
-                <button
-                  type="button"
-                  onClick={onStart}
-                  className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#0b0f1a] py-2 pl-6 pr-2 text-sm text-white sm:mt-8 sm:py-2.5 sm:pl-7"
-                >
-                  Get Started
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-white/15 sm:h-7 sm:w-7">
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </button>
+                <div className="mt-6 flex flex-col items-center gap-3 sm:mt-8 sm:flex-row lg:justify-start">
+                  <button
+                    type="button"
+                    onClick={onStart}
+                    className="inline-flex min-h-12 items-center gap-3 rounded-full bg-[#0b0f1a] py-2.5 pl-6 pr-2 text-sm font-black text-white shadow-[0_22px_55px_-28px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:bg-black"
+                  >
+                    Create your Yeti
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-white/15">
+                      <ChevronRight className="h-4 w-4" />
+                    </span>
+                  </button>
+                  <a
+                    href="#hero-demo"
+                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/80 bg-white/85 px-5 text-sm font-black text-[#0b0f1a] shadow-sm transition hover:-translate-y-0.5 hover:bg-white"
+                  >
+                    Try the demo first
+                  </a>
+                </div>
+                <div className="mx-auto mt-5 grid max-w-2xl gap-2 lg:mx-0">
+                  {trustHighlights.map((item) => (
+                    <div
+                      key={item.text}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/80 bg-white/82 px-4 py-2 text-xs font-bold text-[#0b0f1a] shadow-sm lg:justify-start"
+                    >
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#7B6FE6]/10 text-[#7B6FE6]">
+                        {item.icon}
+                      </span>
+                      {item.text}
+                    </div>
+                  ))}
+                </div>
               </div>
               <HeroYetiDemo />
             </div>
@@ -232,6 +284,26 @@ export function LandingPage({ onStart }: LandingPageProps) {
       </section>
 
       <div className="cloud-section-bg">
+      <section className="mx-auto w-full max-w-6xl px-5 py-14">
+        <div className="rounded-[2rem] border border-border/70 bg-white p-5 shadow-[0_25px_90px_-58px_rgba(15,23,42,0.5)] md:p-7">
+          <div className="grid gap-4 md:grid-cols-3">
+            {proofCards.map((card) => (
+              <article key={card.title} className="rounded-[1.5rem] bg-[linear-gradient(180deg,#fbfbff,#f4f2ff)] p-5">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
+                  {card.icon}
+                </span>
+                <h2 className="mt-4 text-xl font-black tracking-[-0.04em] text-foreground">
+                  {card.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {card.text}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="how-it-works" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,oklch(0.30_0.075_285),oklch(0.18_0.02_270))] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
@@ -308,6 +380,10 @@ export function LandingPage({ onStart }: LandingPageProps) {
       </section>
 
       <PricingSection onLogin={onStart} />
+
+      <div className="mx-auto w-full max-w-3xl px-5 pb-8">
+        <AdBanner slot={import.meta.env.VITE_ADSENSE_SLOT_FOOTER} />
+      </div>
 
       <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">
         <div className="overflow-hidden rounded-[2rem] bg-[oklch(0.20_0.015_270)] p-7 text-white shadow-[0_30px_90px_-52px_rgba(15,23,42,0.9)] md:p-10">

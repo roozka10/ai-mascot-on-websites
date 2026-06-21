@@ -230,18 +230,13 @@ async function reserveQuestionCredit(email, limit) {
   return insertResponse.ok;
 }
 
+import { FREE_PLAN } from "./free-plan.js";
+
 async function enforceQuestionCredits(yetiId) {
   const ownerEmail = await getYetiOwner(yetiId);
-  if (!ownerEmail) return "This Yeti is not on an active plan yet.";
+  if (!ownerEmail) return "This Yeti is not linked to an account yet.";
 
-  const subscription = await getSubscriptionForEmail(ownerEmail);
-  const activeStatuses = new Set(["active", "trialing", "past_due"]);
-  const planLimit =
-    subscription && activeStatuses.has(subscription.status)
-      ? Number(subscription.questions_limit || 0)
-      : 0;
-  const freeLimit = await getFreeQuestionCredits(ownerEmail);
-  const limit = planLimit + freeLimit;
+  const limit = FREE_PLAN.questions_limit;
   const used = await getQuestionUsage(ownerEmail);
   if (limit <= 0 || used >= limit) {
     return "This Yeti has used all AI question credits for this month.";

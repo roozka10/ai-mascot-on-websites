@@ -19,6 +19,7 @@ import {
   Home,
 } from "lucide-react";
 import { LandingPage } from "@/components/LandingPage";
+import { AdBanner } from "@/components/AdBanner";
 import yeti from "@/assets/yeti.png";
 import mascotHandsUp from "../../../mascotwithhandsup.png";
 import {
@@ -44,42 +45,23 @@ const BUSINESS_BRIEF_QUESTIONS = [
   "What tone should Yeti use, and what should it never promise?",
 ];
 
-const ACTIVE_PLAN_STATUSES = new Set(["active", "trialing", "past_due"]);
-
-const SPIN_REWARDS = [
-  { label: "Tiny Snowflake", websites: 0, questions: 25 },
-  { label: "Small Yeti Boost", websites: 0, questions: 75 },
-  { label: "Starter Taste", websites: 1, questions: 100 },
-  { label: "Lucky Trail", websites: 1, questions: 200 },
-  { label: "Rare Mountain Hit", websites: 2, questions: 300 },
-  { label: "Mythical Yeti Hit", websites: 3, questions: 500 },
-];
-
 async function fetchSetupCredits(accessToken: string) {
   const response = await fetch("/api/account-subscription", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data?.error || "Could not check your plan credits.");
+    throw new Error(data?.error || "Could not check your usage.");
   }
 
-  const websitesUsed = Number(data?.credits?.websites_used || 0);
-  const websitesLimit = Number(data?.credits?.websites_limit || 0);
-  const status = data?.subscription?.status;
-  const hasActivePlan =
-    (Boolean(data?.subscription) && ACTIVE_PLAN_STATUSES.has(status)) ||
-    websitesLimit > 0;
-
-  return { hasActivePlan, websitesUsed, websitesLimit };
+  return {
+    websitesUsed: Number(data?.credits?.websites_used || 0),
+    websitesLimit: Number(data?.credits?.websites_limit || 10),
+  };
 }
 
-function canCreateWebsite(credits: {
-  hasActivePlan: boolean;
-  websitesUsed: number;
-  websitesLimit: number;
-}) {
-  return credits.hasActivePlan && credits.websitesUsed < credits.websitesLimit;
+function canCreateWebsite(credits: { websitesUsed: number; websitesLimit: number }) {
+  return credits.websitesUsed < credits.websitesLimit;
 }
 
 async function fetchPersonalizedQuestions(businessName: string, url: string) {
@@ -203,138 +185,6 @@ function QuestionLoadingGame() {
   );
 }
 
-function LuckySpinPopup({
-  spinning,
-  reward,
-  message,
-  onSpin,
-  onClose,
-}: {
-  spinning: boolean;
-  reward: { websites_granted: number; questions_granted: number; reward_label?: string | null } | null;
-  message?: string;
-  onSpin: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-      <style>{`
-        @keyframes yeti-prize-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(1080deg); }
-        }
-      `}</style>
-      <div className="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.75)] sm:p-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-          Lucky Yeti Spin
-        </p>
-        <h2 className="mx-auto mt-2 max-w-md text-2xl font-black tracking-[-0.06em] text-foreground sm:text-3xl">
-          Spin for free Yeti credits.
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-xs font-bold leading-5 text-muted-foreground">
-          One small bonus spin. Plans are still the way to run Yeti for real.
-        </p>
-
-        <div className="mt-5 grid items-center gap-5 md:grid-cols-[0.95fr_1fr]">
-          <div className="relative mx-auto h-72 w-72">
-            <div className="absolute -top-2 left-1/2 z-20 h-0 w-0 -translate-x-1/2 border-x-[11px] border-t-[22px] border-x-transparent border-t-foreground drop-shadow-md" />
-            <div
-              className="absolute inset-0 rounded-full border-[10px] border-white shadow-[0_24px_70px_-38px_rgba(124,58,237,0.75)] ring-1 ring-primary/15"
-              style={{
-                background:
-                  "conic-gradient(from -90deg,#f9a8d4 0deg 60deg,#fdf2f8 60deg 120deg,#c4b5fd 120deg 180deg,#fbcfe8 180deg 240deg,#ede9fe 240deg 300deg,#f472b6 300deg 360deg)",
-                animation: spinning ? "yeti-prize-spin 1.45s cubic-bezier(.18,.72,.16,1) infinite" : undefined,
-              }}
-            >
-              {SPIN_REWARDS.map((item, index) => (
-                <div
-                  key={item.label}
-                  className="absolute left-1/2 top-1/2 w-[112px] origin-left text-left text-[10px] font-black leading-3 text-foreground"
-                  style={{ transform: `rotate(${index * 60 + 30}deg) translateX(22px)` }}
-                >
-                  <span
-                    className="block max-w-[86px]"
-                    style={{ transform: `rotate(${index >= 2 && index <= 4 ? 180 : 0}deg)` }}
-                  >
-                    {item.websites} {item.websites === 1 ? "site" : "sites"} + {item.questions} answers
-                  </span>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={reward ? onClose : onSpin}
-              disabled={spinning}
-              className="absolute left-1/2 top-1/2 z-30 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-[5px] border-white bg-foreground text-base font-black text-white shadow-[0_18px_45px_-20px_rgba(15,23,42,0.85)] transition hover:scale-105 disabled:cursor-wait disabled:opacity-80"
-            >
-              {spinning ? "..." : reward ? "Done" : "Spin"}
-            </button>
-            <div className="absolute inset-5 rounded-full border border-white/60" />
-          </div>
-
-          <div className="rounded-[1.5rem] border border-border/70 bg-[linear-gradient(180deg,#fff,#faf7ff)] p-4 text-left shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-              What you can win
-            </p>
-            <div className="mt-3 grid gap-2">
-              {SPIN_REWARDS.map((item) => (
-                <div key={item.label} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 shadow-sm">
-                  <div>
-                    <p className="text-xs font-black text-foreground">{item.label}</p>
-                    <p className="text-[11px] font-bold text-muted-foreground">
-                      {item.websites} website {item.websites === 1 ? "slot" : "slots"}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black text-primary">
-                    +{item.questions.toLocaleString()} answers
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {reward ? (
-          <div className="mt-4 rounded-2xl bg-primary/8 px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
-              {reward.reward_label || "Yeti Prize"}
-            </p>
-            <p className="mt-1 text-lg font-black text-foreground">
-              +{reward.websites_granted} website {reward.websites_granted === 1 ? "slot" : "slots"} and +{reward.questions_granted.toLocaleString()} AI answers
-            </p>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm font-bold text-foreground">
-            {message || (spinning ? "Yeti is spinning the mountain wheel..." : "Press spin once to get your prize.")}
-          </p>
-        )}
-
-        <div className="mt-4 grid gap-2">
-          {reward && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90"
-            >
-              Use my credits
-            </button>
-          )}
-          {!reward && (
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={spinning}
-              className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-wait disabled:opacity-60"
-            >
-              Skip for now
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type WebsiteScanResult = {
   brain: string;
   pages: string[];
@@ -400,56 +250,120 @@ function LoginScreen({
   loading: boolean;
   error: string;
 }) {
+  const trustItems = [
+    "No password to remember",
+    "No credit card needed to start setup",
+    "Your AI key stays on the server",
+  ];
+  const setupPreview = [
+    "Paste your website link",
+    "Yeti scans important pages",
+    "Copy one install script",
+  ];
+
   return (
-    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 py-10">
-      <div className="mx-auto flex min-h-[calc(100dvh-80px)] w-full max-w-[520px] flex-col items-center justify-center text-center">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-primary/15 blur-3xl" />
-          <img
-            src={yeti}
-            alt="Yeti mascot"
-            className="relative z-10 mx-auto w-28 select-none drop-shadow-[0_20px_28px_rgba(15,23,42,0.16)]"
-          />
-        </div>
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_15%_10%,rgba(191,239,255,0.75),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(123,111,230,0.18),transparent_32%),linear-gradient(180deg,#fbfcff,#f6f7ff)] px-4 py-8">
+      <div className="mx-auto grid min-h-[calc(100dvh-64px)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="rounded-[2rem] border border-white/80 bg-white/80 p-5 shadow-[0_28px_90px_-58px_rgba(15,23,42,0.55)] backdrop-blur md:p-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
+            <ShieldCheck className="h-4 w-4" />
+            Secure Google sign up
+          </div>
 
-        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          Yeti Guide
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
-          Sign in to create your Yeti
-        </h1>
-        <p className="mt-4 max-w-sm text-sm leading-7 text-muted-foreground">
-          One Google button. No password, no email form. Train a talking Yeti for your website.
-        </p>
+          <div className="mt-6 grid items-center gap-6 md:grid-cols-[1fr_auto]">
+            <div>
+              <h1 className="text-4xl font-black tracking-[-0.06em] text-foreground sm:text-5xl">
+                Create your Yeti in minutes.
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
+                Sign in with Google so your Yeti, website scan, and install code stay saved in your workspace.
+              </p>
+            </div>
+            <div className="relative mx-auto">
+              <div className="absolute inset-0 rounded-full bg-primary/15 blur-3xl" />
+              <img
+                src={yeti}
+                alt="Yeti mascot"
+                className="relative z-10 w-32 select-none drop-shadow-[0_20px_28px_rgba(15,23,42,0.16)] md:w-40"
+              />
+            </div>
+          </div>
 
-        {!isSupabaseConfigured && (
-          <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            Supabase env vars are missing in this build. In Vercel, add{" "}
-            <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{" "}
-            <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code>, then redeploy.
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            {trustItems.map((item) => (
+              <div key={item} className="rounded-2xl border border-border/70 bg-white px-4 py-3 shadow-sm">
+                <Check className="h-4 w-4 text-primary" />
+                <p className="mt-2 text-sm font-bold leading-5 text-foreground">{item}</p>
+              </div>
+            ))}
+          </div>
+
+          {!isSupabaseConfigured && (
+            <p className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              Supabase env vars are missing in this build. In Vercel, add{" "}
+              <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{" "}
+              <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code>, then redeploy.
+            </p>
+          )}
+
+          {error && (
+            <p className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={onGoogle}
+            disabled={!isSupabaseConfigured || loading}
+            className="mt-7 inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-foreground px-6 py-4 text-sm font-black text-background shadow-[0_24px_65px_-34px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto sm:min-w-[310px]"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
+            {loading ? "Opening Google..." : "Continue with Google"}
+          </button>
+
+          <p className="mt-4 max-w-xl text-xs font-bold leading-5 text-muted-foreground">
+            We only use Google to create your account and keep your Yeti connected to you. No password form, no spammy onboarding.
           </p>
-        )}
+        </section>
 
-        {error && (
-          <p className="mt-6 w-full max-w-sm rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+        <aside className="rounded-[2rem] bg-[linear-gradient(135deg,oklch(0.30_0.075_285),oklch(0.18_0.02_270))] p-5 text-white shadow-[0_30px_90px_-56px_rgba(15,23,42,0.9)] md:p-7">
+          <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.08] p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">
+              What happens next
+            </p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.05em]">
+              Your website becomes the brain.
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              Yeti learns your pages first, then answers visitors with short, human voice replies.
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={onGoogle}
-          disabled={!isSupabaseConfigured || loading}
-          className="mt-8 inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-full border border-border bg-white px-5 py-4 text-sm font-semibold text-foreground shadow-[0_18px_55px_-34px_rgba(15,23,42,0.45)] transition hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
-          {loading ? "Redirecting to Google..." : "Continue with Google"}
-        </button>
+          <div className="mt-4 space-y-3">
+            {setupPreview.map((item, index) => (
+              <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-secondary text-sm font-black text-[oklch(0.18_0.02_270)]">
+                  {index + 1}
+                </span>
+                <p className="text-sm font-bold text-white">{item}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-[1.5rem] border border-white/12 bg-white/[0.08] p-5">
+            <p className="text-sm font-black text-white">Trust details</p>
+            <div className="mt-3 grid gap-2 text-sm leading-6 text-white/72">
+              <p>Yeti does not need your website password.</p>
+              <p>Visitors use your public widget ID, not your private AI key.</p>
+              <p>You can refresh your website knowledge anytime from Account.</p>
+            </div>
+          </div>
+        </aside>
       </div>
     </main>
   );
 }
-
 function OnboardingNav({
   email,
   view,
@@ -512,30 +426,21 @@ function AccountPage({
   email,
   accessToken,
   onLogout,
+  onCreateAnother,
 }: {
   email?: string;
   accessToken?: string;
   onLogout: () => void;
+  onCreateAnother: () => void;
 }) {
-  const [subscription, setSubscription] = useState<{
-    stripe_subscription_id: string | null;
-    plan: string | null;
-    status: string | null;
-    websites_limit: number | null;
-    questions_limit: number | null;
-  } | null>(null);
   const [credits, setCredits] = useState<{
     websites_used: number;
     websites_limit: number;
     questions_used: number;
     questions_limit: number;
   } | null>(null);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [subscriptionError, setSubscriptionError] = useState("");
-  const [showCancel, setShowCancel] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelMessage, setCancelMessage] = useState("");
+  const [usageLoading, setUsageLoading] = useState(true);
+  const [usageError, setUsageError] = useState("");
   const [myYetis, setMyYetis] = useState<YetiConfig[]>([]);
   const [yetisLoading, setYetisLoading] = useState(true);
   const [refreshingYetiId, setRefreshingYetiId] = useState<string | null>(null);
@@ -543,31 +448,28 @@ function AccountPage({
 
   useEffect(() => {
     if (!accessToken) {
-      setSubscriptionLoading(false);
+      setUsageLoading(false);
       setYetisLoading(false);
       return;
     }
 
     let active = true;
-    setSubscriptionLoading(true);
-    setSubscriptionError("");
+    setUsageLoading(true);
+    setUsageError("");
 
     void fetch("/api/account-subscription", {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data?.error || "Could not load your plan.");
-        if (active) {
-          setSubscription(data.subscription || null);
-          setCredits(data.credits || null);
-        }
+        if (!response.ok) throw new Error(data?.error || "Could not load your usage.");
+        if (active) setCredits(data.credits || null);
       })
       .catch((error) => {
-        if (active) setSubscriptionError(error instanceof Error ? error.message : "Could not load your plan.");
+        if (active) setUsageError(error instanceof Error ? error.message : "Could not load your usage.");
       })
       .finally(() => {
-        if (active) setSubscriptionLoading(false);
+        if (active) setUsageLoading(false);
       });
 
     return () => {
@@ -630,59 +532,12 @@ function AccountPage({
     }
   }
 
-  async function cancelSubscription() {
-    if (!accessToken || !subscription?.stripe_subscription_id) return;
-
-    const reason = cancelReason.trim();
-    if (reason.length < 3) {
-      setCancelMessage("Please tell us why before cancelling.");
-      return;
-    }
-
-    setCancelLoading(true);
-    setCancelMessage("");
-
-    try {
-      const response = await fetch("/api/cancel-subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          subscriptionId: subscription.stripe_subscription_id,
-          reason,
-        }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Could not cancel your plan.");
-
-      setSubscription((current) => current ? { ...current, status: "canceled" } : current);
-      setShowCancel(false);
-      setCancelReason("");
-      setCancelMessage("Your plan has been canceled.");
-    } catch (error) {
-      setCancelMessage(error instanceof Error ? error.message : "Could not cancel your plan.");
-    } finally {
-      setCancelLoading(false);
-    }
-  }
-
-  const isCanceled = subscription?.status === "canceled";
-  const planName = isCanceled
-    ? "Buy a plan"
-    : subscription?.plan
-    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
-    : "No paid plan yet";
   const websiteCredits = credits
     ? `${credits.websites_used}/${credits.websites_limit || "-"}`
     : "-";
   const questionCredits = credits
     ? `${credits.questions_used.toLocaleString()}/${credits.questions_limit ? credits.questions_limit.toLocaleString() : "-"}`
     : "-";
-  const hasAnyCredits = Boolean(
-    credits && (credits.websites_limit > 0 || credits.questions_limit > 0),
-  );
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] px-4 pb-8 pt-24">
@@ -704,37 +559,25 @@ function AccountPage({
         <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-[linear-gradient(180deg,#ffffff,#f8f7ff)] p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Current plan</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">Your plan</p>
               <h2 className="mt-1.5 text-2xl font-black tracking-[-0.05em] text-foreground">
-                {subscriptionLoading ? "Loading..." : planName}
+                {usageLoading ? "Loading..." : "Free forever"}
               </h2>
               <p className="mt-1 text-xs font-bold text-muted-foreground">
-                {subscriptionLoading
-                  ? "Checking credits..."
-                  : hasAnyCredits
-                    ? "Plan and bonus credits"
-                    : isCanceled
-                      ? "Choose a plan to unlock credits"
-                      : "Plan and monthly credits"}
+                {usageLoading ? "Checking usage..." : "10 websites and 5,000 AI answers per month"}
               </p>
             </div>
           </div>
 
-          {subscriptionError && (
+          {usageError && (
             <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
-              {subscriptionError}
-            </p>
-          )}
-
-          {cancelMessage && (
-            <p className="mt-3 rounded-2xl border border-primary/20 bg-primary/8 px-3 py-2 text-xs font-bold text-primary">
-              {cancelMessage}
+              {usageError}
             </p>
           )}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Website credits</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Websites</p>
               <p className="mt-1.5 text-xl font-black text-foreground">
                 {websiteCredits}
               </p>
@@ -747,24 +590,20 @@ function AccountPage({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <a
-              href="/pricing"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
-            >
-              Upgrade plan
-              <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-            <button
-              type="button"
-              onClick={() => setShowCancel(true)}
-              disabled={!subscription?.stripe_subscription_id || isCanceled}
-              className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isCanceled ? "Plan canceled" : "Cancel plan"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onCreateAnother}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground transition hover:bg-primary/90"
+          >
+            Create another Yeti
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
+
+        <AdBanner
+          className="mt-5"
+          slot={import.meta.env.VITE_ADSENSE_SLOT_ACCOUNT}
+        />
 
         <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-white p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
@@ -840,54 +679,6 @@ function AccountPage({
           Log out
         </button>
       </section>
-
-      {showCancel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-[1.75rem] border border-red-100 bg-white p-5 text-center shadow-[0_28px_90px_-42px_rgba(15,23,42,0.65)]">
-            <button
-              type="button"
-              onClick={() => setShowCancel(false)}
-              className="ml-auto flex rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              aria-label="Close cancellation"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <Mascot size={74} />
-            <p className="mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-red-500">
-              Cancel plan
-            </p>
-            <h2 className="mt-2 text-2xl font-black tracking-[-0.05em] text-foreground">
-              Are you sure?
-            </h2>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              This will cancel your Stripe subscription now. Tell us why before you go.
-            </p>
-            <textarea
-              value={cancelReason}
-              onChange={(event) => setCancelReason(event.target.value)}
-              placeholder="Why do you want to cancel?"
-              className="mt-4 min-h-24 w-full resize-none rounded-2xl border border-border bg-white px-3 py-2 text-xs outline-none focus:border-primary"
-            />
-            <div className="mt-4 grid gap-2">
-              <button
-                type="button"
-                onClick={cancelSubscription}
-                disabled={cancelLoading}
-                className="inline-flex items-center justify-center rounded-full bg-red-500 px-4 py-2.5 text-xs font-black text-white transition hover:bg-red-600 disabled:cursor-wait disabled:opacity-70"
-              >
-                {cancelLoading ? "Cancelling..." : "Cancel anyway"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCancel(false)}
-                className="inline-flex items-center justify-center rounded-full border border-border px-4 py-2.5 text-xs font-black text-muted-foreground transition hover:bg-muted"
-              >
-                Never mind
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
@@ -906,13 +697,6 @@ export default function Onboarding() {
   const [briefQuestions, setBriefQuestions] = useState(BUSINESS_BRIEF_QUESTIONS);
   const [briefAnswers, setBriefAnswers] = useState<string[]>(() => BUSINESS_BRIEF_QUESTIONS.map(() => ""));
   const [currentBriefQuestionIndex, setCurrentBriefQuestionIndex] = useState(0);
-  const [showLuckySpin, setShowLuckySpin] = useState(false);
-  const [spinLoading, setSpinLoading] = useState(false);
-  const [spinReward, setSpinReward] = useState<{
-    websites_granted: number;
-    questions_granted: number;
-    reward_label?: string | null;
-  } | null>(null);
   const [listening, setListening] = useState(false);
   const [voiceStarted, setVoiceStarted] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
@@ -938,46 +722,9 @@ export default function Onboarding() {
     setStep(2);
   };
 
-  async function refreshSpinEligibility(accessToken: string) {
-    const response = await fetch("/api/account-subscription", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return;
-
-    const websitesLimit = Number(data?.credits?.websites_limit || 0);
-    const questionsLimit = Number(data?.credits?.questions_limit || 0);
-    const hasSpun = Boolean(data?.free_credits?.has_spun);
-    setShowLuckySpin(!hasSpun && websitesLimit === 0 && questionsLimit === 0);
-  }
-
-  async function spinForCredits() {
-    if (!session?.access_token) return;
-    setSpinLoading(true);
-    setError("");
-
-    try {
-      const [response] = await Promise.all([
-        fetch("/api/free-credits-spin", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }),
-        new Promise((resolve) => setTimeout(resolve, 1800)),
-      ]);
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data?.error || "Could not spin for credits.");
-      setSpinReward(data.reward || null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not spin for credits.");
-      setShowLuckySpin(false);
-    } finally {
-      setSpinLoading(false);
-    }
-  }
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success" || params.get("start") === "setup") {
+    if (params.get("start") === "setup") {
       setShowLogin(true);
       setView("setup");
     }
@@ -1089,11 +836,6 @@ export default function Onboarding() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!session?.access_token || view !== "setup" || step !== 0) return;
-    void refreshSpinEligibility(session.access_token);
-  }, [session?.access_token, step, view]);
-
   const startListening = () => {
     if (!recognitionRef.current) {
       setError("Speech recognition is not available in this browser. You can type the business details instead.");
@@ -1128,12 +870,12 @@ export default function Onboarding() {
 
     setError("");
     setLoading(true);
-    setStatusText("Checking your plan...");
+    setStatusText("Preparing your setup...");
 
     try {
       const credits = await fetchSetupCredits(session.access_token);
       if (!canCreateWebsite(credits)) {
-        window.location.href = "/pricing";
+        setError("You have reached the free website limit. Remove an old Yeti from your account to add another.");
         return;
       }
       setStatusText("Writing questions for your website...");
@@ -1143,7 +885,7 @@ export default function Onboarding() {
       setCurrentBriefQuestionIndex(0);
       setStep(1);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not check your plan.");
+      setError(err instanceof Error ? err.message : "Could not continue setup.");
     } finally {
       setLoading(false);
       setStatusText("");
@@ -1181,10 +923,10 @@ export default function Onboarding() {
       if (!/^https?:\/\//i.test(url)) url = "https://" + url;
 
       if (session?.access_token) {
-        setStatusText("Checking website credits...");
+        setStatusText("Checking website slots...");
         const credits = await fetchSetupCredits(session.access_token);
         if (!canCreateWebsite(credits)) {
-          window.location.href = "/pricing";
+          setError("You have reached the free website limit. Remove an old Yeti from your account to add another.");
           return;
         }
       }
@@ -1300,7 +1042,23 @@ export default function Onboarding() {
     return (
       <>
         {nav}
-        <AccountPage email={email} accessToken={session.access_token} onLogout={logout} />
+        <AccountPage
+          email={email}
+          accessToken={session.access_token}
+          onLogout={logout}
+          onCreateAnother={() => {
+            setView("setup");
+            setStep(0);
+            setName("");
+            setSite("");
+            setBriefQuestions(BUSINESS_BRIEF_QUESTIONS);
+            setBriefAnswers(BUSINESS_BRIEF_QUESTIONS.map(() => ""));
+            setCurrentBriefQuestionIndex(0);
+            setYetiId("");
+            setSnippet("");
+            setError("");
+          }}
+        />
       </>
     );
   }
@@ -1700,22 +1458,10 @@ export default function Onboarding() {
                 className="mt-8 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-medium py-3.5 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {loading ? "Checking plan..." : "Continue"}
+                {loading ? "Working..." : "Continue"}
                 {!loading && <ArrowRight className="h-4 w-4" />}
               </button>
               {isGeneratingQuestions && <QuestionLoadingGame />}
-              {showLuckySpin && (
-                <LuckySpinPopup
-                  spinning={spinLoading}
-                  reward={spinReward}
-                  message="Your account has 0 credits. Spin once and see what Yeti gives you."
-                  onSpin={() => void spinForCredits()}
-                  onClose={() => {
-                    setShowLuckySpin(false);
-                    setSpinReward(null);
-                  }}
-                />
-              )}
             </StepShell>
           )}
 
