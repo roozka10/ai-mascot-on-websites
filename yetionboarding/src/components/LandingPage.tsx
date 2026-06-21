@@ -4,9 +4,7 @@ import {
   Check,
   ChevronRight,
   Code2,
-  Lock,
   Menu,
-  MessageCircle,
   ScanSearch,
   ShieldCheck,
   Sparkles,
@@ -17,6 +15,7 @@ import {
 } from "lucide-react";
 import { PricingSection } from "@/components/PricingSection";
 import { AdBanner } from "@/components/AdBanner";
+import { ADSENSE_SLOTS } from "@/lib/adsense-config";
 import yeti from "@/assets/yeti.png";
 
 const HERO_VIDEO_URL =
@@ -163,12 +162,6 @@ export function LandingPage({ onStart }: LandingPageProps) {
     { icon: <Code2 className="h-5 w-5" />, title: "Paste one script", text: "Add it to your footer, or ask Cursor, Claude Code, or Codex to do it." },
   ];
 
-  const trustHighlights = [
-    { icon: <ScanSearch className="h-4 w-4" />, text: "Learns pricing, FAQs, policies, and support pages" },
-    { icon: <Lock className="h-4 w-4" />, text: "AI keys stay server-side, not in the widget" },
-    { icon: <MessageCircle className="h-4 w-4" />, text: "Answers before asking visitors for forms or tickets" },
-  ];
-
   const proofCards = [
     {
       icon: <ShieldCheck className="h-5 w-5" />,
@@ -262,19 +255,6 @@ export function LandingPage({ onStart }: LandingPageProps) {
                   >
                     Try the demo first
                   </a>
-                </div>
-                <div className="mx-auto mt-5 grid max-w-2xl gap-2 lg:mx-0">
-                  {trustHighlights.map((item) => (
-                    <div
-                      key={item.text}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/80 bg-white/82 px-4 py-2 text-xs font-bold text-[#0b0f1a] shadow-sm lg:justify-start"
-                    >
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#7B6FE6]/10 text-[#7B6FE6]">
-                        {item.icon}
-                      </span>
-                      {item.text}
-                    </div>
-                  ))}
                 </div>
               </div>
               <HeroYetiDemo />
@@ -382,7 +362,7 @@ export function LandingPage({ onStart }: LandingPageProps) {
       <PricingSection onLogin={onStart} />
 
       <div className="mx-auto w-full max-w-3xl px-5 pb-8">
-        <AdBanner slot={import.meta.env.VITE_ADSENSE_SLOT_FOOTER} />
+        <AdBanner slot={ADSENSE_SLOTS.footer} />
       </div>
 
       <section id="takes" className="mx-auto w-full max-w-6xl px-5 py-16">

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ADSENSE_CLIENT, ADSENSE_SLOTS } from "@/lib/adsense-config";
 
 type AdBannerProps = {
   slot?: string;
@@ -20,8 +21,8 @@ export function AdBanner({
   label = "Sponsored",
 }: AdBannerProps) {
   const pushed = useRef(false);
-  const client = import.meta.env.VITE_ADSENSE_CLIENT || "ca-pub-2098929307010637";
-  const adSlot = slot || import.meta.env.VITE_ADSENSE_SLOT;
+  const client = ADSENSE_CLIENT;
+  const adSlot = slot || ADSENSE_SLOTS.default;
 
   useEffect(() => {
     if (!client || !adSlot || pushed.current) return;

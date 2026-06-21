@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { LandingPage } from "@/components/LandingPage";
 import { AdBanner } from "@/components/AdBanner";
+import { ADSENSE_SLOTS } from "@/lib/adsense-config";
 import yeti from "@/assets/yeti.png";
 import mascotHandsUp from "../../../mascotwithhandsup.png";
 import {
@@ -600,10 +601,7 @@ function AccountPage({
           </button>
         </div>
 
-        <AdBanner
-          className="mt-5"
-          slot={import.meta.env.VITE_ADSENSE_SLOT_ACCOUNT}
-        />
+        <AdBanner className="mt-5" slot={ADSENSE_SLOTS.account} />
 
         <div className="mt-5 rounded-[1.35rem] border border-border/70 bg-white p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
